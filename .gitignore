@@ -24,3 +24,5 @@ xunit.xml
 # built typescript
 lib
 prebuilds
+
+_libmongocrypt/

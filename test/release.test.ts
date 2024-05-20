@@ -15,7 +15,7 @@ const REQUIRED_FILES = [
   'package/package.json',
   'package/lib/index.d.ts.map',
   'package/lib/index.js.map',
-  'package/CHANGELOG.md',
+  'package/HISTORY.md',
   'package/README.md',
   'package/lib/index.d.ts',
   'package/src/index.ts'

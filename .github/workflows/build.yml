@@ -1,0 +1,24 @@
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+name: build
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+        matrix:
+          node: ['20.x'] # '16.x', '18.x',
+    name: Node.js ${{ matrix.node }} build
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: 'npm'
+          registry-url: 'https://registry.npmjs.org'
+      - run: npm install -g npm@latest
+        shell: bash
+      - run: node etc/libmongocrypt.mjs
+        shell: bash
