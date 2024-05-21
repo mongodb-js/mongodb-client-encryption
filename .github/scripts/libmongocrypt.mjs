@@ -17,11 +17,7 @@ async function parseArguments() {
     help: { short: 'h', type: 'boolean' }
   };
 
-  const args = util.parseArgs({
-    args: process.argv.slice(2),
-    options,
-    allowPositionals: false
-  });
+  const args = util.parseArgs({ args: process.argv.slice(2), options, allowPositionals: false });
 
   if (args.values.help) {
     console.log(
@@ -39,18 +35,13 @@ async function parseArguments() {
   };
 }
 
+/** `xtrace` style command runner, uses spawn so that stdio is inherited */
 async function run(command, args = [], options = {}) {
   console.error(`+ ${command} ${args.join(' ')}`, options.cwd ? `(in: ${options.cwd})` : '');
   await events.once(child_process.spawn(command, args, { stdio: 'inherit', ...options }), 'exit');
 }
 
-/**
- * Given an object returns CLI flags:
- * ```
- * toFlags({a: 1, b: 2})
- * // "-a=1 -b=2"
- * ```
- */
+/** CLI flag maker: `toFlags({a: 1, b: 2})` yields `['-a=1', '-b=2']` */
 function toFlags(object) {
   return Array.from(Object.entries(object)).map(([k, v]) => `-${k}=${v}`);
 }
@@ -58,7 +49,8 @@ function toFlags(object) {
 const args = await parseArguments();
 const libmongocryptRoot = path.resolve('_libmongocrypt');
 
-const libmongocryptAlreadyClonedAndCheckedOut = (await fs.readFile(path.join(libmongocryptRoot, '.git', 'HEAD'), 'utf8')).trim().endsWith(`r-${args.libmongocrypt.ref}`);
+const currentLibMongoCryptBranch = await fs.readFile(path.join(libmongocryptRoot, '.git', 'HEAD'), 'utf8').catch(() => '')
+const libmongocryptAlreadyClonedAndCheckedOut = currentLibMongoCryptBranch.trim().endsWith(`r-${args.libmongocrypt.ref}`);
 
 if (!args.clean && !libmongocryptAlreadyClonedAndCheckedOut) {
   console.error('fetching libmongocrypt...', args.libmongocrypt);
@@ -70,9 +62,8 @@ if (!args.clean && !libmongocryptAlreadyClonedAndCheckedOut) {
   console.error('libmongocrypt already up to date...', args.libmongocrypt);
 }
 
-const libmongocryptAlreadyBuilt =
-  (await fs.readFile(path.join(libmongocryptRoot, 'VERSION_CURRENT'), 'utf8')).trim() ===
-  args.libmongocrypt.ref;
+const libmongocryptBuiltVersion = await fs.readFile(path.join(libmongocryptRoot, 'VERSION_CURRENT'), 'utf8').catch(() => '');
+const libmongocryptAlreadyBuilt = libmongocryptBuiltVersion.trim() === args.libmongocrypt.ref;
 
 if (!args.clean && !libmongocryptAlreadyBuilt) {
   console.error('building libmongocrypt...\n', args);
@@ -101,12 +92,14 @@ if (!args.clean && !libmongocryptAlreadyBuilt) {
   });
 
   const WINDOWS_CMAKE_FLAGS =
-    process.platform === 'win32'
+    process.platform === 'win32' // Windows is still called "win32" when it is 64-bit
       ? toFlags({ Thost: 'x64', A: 'x64', DENABLE_WINDOWS_STATIC_RUNTIME: 'ON' })
       : [];
 
   const MACOS_CMAKE_FLAGS =
-    process.platform === 'darwin' ? toFlags({ DCMAKE_OSX_DEPLOYMENT_TARGET: '10.12' }) : [];
+    process.platform === 'darwin' // The minimum macos target version we want for
+      ? toFlags({ DCMAKE_OSX_DEPLOYMENT_TARGET: '10.12' })
+      : [];
 
   await run('cmake', [...CMAKE_FLAGS, ...WINDOWS_CMAKE_FLAGS, ...MACOS_CMAKE_FLAGS, libmongocryptRoot], { cwd: nodeBuildRoot });
   await run('cmake', ['--build', '.', '--target', 'install', '--config', 'RelWithDebInfo'], { cwd: nodeBuildRoot });
