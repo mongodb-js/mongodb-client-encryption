@@ -20,5 +20,5 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
       - run: npm install -g npm@latest
         shell: bash
-      - run: node etc/libmongocrypt.mjs
+      - run: node .github/scripts/libmongocrypt.mjs
         shell: bash
