@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import util from 'node:util';
 import process from 'node:process';
 import fs from 'node:fs/promises';
@@ -7,11 +6,9 @@ import events from 'node:events';
 import path from 'node:path';
 
 async function parseArguments() {
-  const libmongocryptVersion = (
-    await import('../package.json', {
-      [process.version.split('.').at(0) === 'v16' ? 'assert' : 'with']: { type: 'json' }
-    })
-  ).default['mongodb:libmongocrypt'];
+  const jsonImport = { [process.version.split('.').at(0) === 'v16' ? 'assert' : 'with']: { type: 'json' } };
+  const pkg = (await import('../../package.json', jsonImport)).default;
+  const libmongocryptVersion = pkg['mongodb:libmongocrypt'];
 
   const options = {
     url: { short: 'u', type: 'string', default: 'https://github.com/mongodb/libmongocrypt.git' },
@@ -61,20 +58,14 @@ function toFlags(object) {
 const args = await parseArguments();
 const libmongocryptRoot = path.resolve('_libmongocrypt');
 
-const libmongocryptAlreadyClonedAndCheckedOut = (
-  await fs.readFile(path.join(libmongocryptRoot, '.git', 'HEAD'), 'utf8')
-)
-  .trim()
-  .endsWith('r-1.10.0');
+const libmongocryptAlreadyClonedAndCheckedOut = (await fs.readFile(path.join(libmongocryptRoot, '.git', 'HEAD'), 'utf8')).trim().endsWith(`r-${args.libmongocrypt.ref}`);
 
 if (!args.clean && !libmongocryptAlreadyClonedAndCheckedOut) {
   console.error('fetching libmongocrypt...', args.libmongocrypt);
   await fs.rm(libmongocryptRoot, { recursive: true, force: true });
   await run('git', ['clone', args.libmongocrypt.url, libmongocryptRoot]);
   await run('git', ['fetch', '--tags'], { cwd: libmongocryptRoot });
-  await run('git', ['checkout', args.libmongocrypt.ref, '-b', `r-${args.libmongocrypt.ref}`], {
-    cwd: libmongocryptRoot
-  });
+  await run('git', ['checkout', args.libmongocrypt.ref, '-b', `r-${args.libmongocrypt.ref}`], { cwd: libmongocryptRoot });
 } else {
   console.error('libmongocrypt already up to date...', args.libmongocrypt);
 }
@@ -117,15 +108,8 @@ if (!args.clean && !libmongocryptAlreadyBuilt) {
   const MACOS_CMAKE_FLAGS =
     process.platform === 'darwin' ? toFlags({ DCMAKE_OSX_DEPLOYMENT_TARGET: '10.12' }) : [];
 
-  await run(
-    'cmake',
-    [...CMAKE_FLAGS, ...WINDOWS_CMAKE_FLAGS, ...MACOS_CMAKE_FLAGS, libmongocryptRoot],
-    { cwd: nodeBuildRoot }
-  );
-
-  await run('cmake', ['--build', '.', '--target', 'install', '--config', 'RelWithDebInfo'], {
-    cwd: nodeBuildRoot
-  });
+  await run('cmake', [...CMAKE_FLAGS, ...WINDOWS_CMAKE_FLAGS, ...MACOS_CMAKE_FLAGS, libmongocryptRoot], { cwd: nodeBuildRoot });
+  await run('cmake', ['--build', '.', '--target', 'install', '--config', 'RelWithDebInfo'], { cwd: nodeBuildRoot });
 } else {
   console.error('libmongocrypt already built...');
 }
