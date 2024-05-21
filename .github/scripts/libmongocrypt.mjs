@@ -52,7 +52,7 @@ const libmongocryptRoot = path.resolve('_libmongocrypt');
 const currentLibMongoCryptBranch = await fs.readFile(path.join(libmongocryptRoot, '.git', 'HEAD'), 'utf8').catch(() => '')
 const libmongocryptAlreadyClonedAndCheckedOut = currentLibMongoCryptBranch.trim().endsWith(`r-${args.libmongocrypt.ref}`);
 
-if (!args.clean && !libmongocryptAlreadyClonedAndCheckedOut) {
+if (args.clean || !libmongocryptAlreadyClonedAndCheckedOut) {
   console.error('fetching libmongocrypt...', args.libmongocrypt);
   await fs.rm(libmongocryptRoot, { recursive: true, force: true });
   await run('git', ['clone', args.libmongocrypt.url, libmongocryptRoot]);
@@ -65,7 +65,7 @@ if (!args.clean && !libmongocryptAlreadyClonedAndCheckedOut) {
 const libmongocryptBuiltVersion = await fs.readFile(path.join(libmongocryptRoot, 'VERSION_CURRENT'), 'utf8').catch(() => '');
 const libmongocryptAlreadyBuilt = libmongocryptBuiltVersion.trim() === args.libmongocrypt.ref;
 
-if (!args.clean && !libmongocryptAlreadyBuilt) {
+if (args.clean || !libmongocryptAlreadyBuilt) {
   console.error('building libmongocrypt...\n', args);
 
   const nodeDepsRoot = path.resolve('deps');
