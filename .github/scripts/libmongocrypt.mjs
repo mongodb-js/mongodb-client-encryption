@@ -75,7 +75,21 @@ if (!args.clean && !libmongocryptAlreadyBuilt) {
   await fs.mkdir(nodeBuildRoot, { recursive: true });
 
   const CMAKE_FLAGS = toFlags({
-    /** We provide crypto hooks from Node.js binding to openssl (so disable system crypto) */
+    /**
+     * We provide crypto hooks from Node.js binding to openssl (so disable system crypto)
+     * TODO: NODE-5455
+     *
+     * One thing that is not obvious from the build instructions for libmongocrypt
+     * and the Node.js bindings is that the Node.js driver uses libmongocrypt in
+     * DISABLE_NATIVE_CRYPTO aka nocrypto mode, that is, instead of using native
+     * system libraries for crypto operations, it provides callbacks to libmongocrypt
+     * which, in the Node.js addon case, call JS functions that in turn call built-in
+     * Node.js crypto methods.
+     *
+     * That’s way more convoluted than it needs to be, considering that we always
+     * have a copy of OpenSSL available directly, but for now it seems to make sense
+     * to stick with what the Node.js addon does here.
+     */
     DDISABLE_NATIVE_CRYPTO: '1',
     /** A consistent name for the output "library" directory */
     DCMAKE_INSTALL_LIBDIR: 'lib',
