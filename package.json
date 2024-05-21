@@ -17,12 +17,11 @@
   },
   "scripts": {
     "install": "prebuild-install --runtime napi || node-gyp rebuild",
-    "build:ts": "tsc",
     "clang-format": "clang-format --style=file:.clang-format --Werror -i addon/*",
     "check:eslint": "eslint src test",
     "check:clang-format": "clang-format --style=file:.clang-format --dry-run --Werror addon/*",
     "test": "mocha test",
-    "prepare": "node etc/prepare.js",
+    "prepare": "tsc",
     "rebuild": "prebuild --compile",
     "prebuild": "prebuild --runtime napi --strip --verbose --all"
   },
