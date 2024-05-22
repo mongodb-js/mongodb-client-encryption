@@ -10,7 +10,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    name: Lint ${{ matrix.lint-target }}
+    name: ${{ matrix.lint-target }}
     strategy:
       matrix:
         lint-target: ["c++", "typescript"]
