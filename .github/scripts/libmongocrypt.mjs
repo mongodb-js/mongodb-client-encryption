@@ -4,24 +4,29 @@ import fs from 'node:fs/promises';
 import child_process from 'node:child_process';
 import events from 'node:events';
 import path from 'node:path';
+import https from 'node:https';
+import { pipeline } from 'node:stream/promises';
 
 async function parseArguments() {
-  const jsonImport = { [process.version.split('.').at(0) === 'v16' ? 'assert' : 'with']: { type: 'json' } };
+  const jsonImport = {
+    [process.version.split('.').at(0) === 'v16' ? 'assert' : 'with']: { type: 'json' }
+  };
   const pkg = (await import('../../package.json', jsonImport)).default;
   const libmongocryptVersion = pkg['mongodb:libmongocrypt'];
 
   const options = {
-    url: { short: 'u', type: 'string', default: 'https://github.com/mongodb/libmongocrypt.git' },
-    libversion: { short: 'l', type: 'string', default: libmongocryptVersion },
-    clean: { short: 'c', type: 'boolean' },
-    help: { short: 'h', type: 'boolean' }
+    gitURL: { short: 'u', type: 'string', default: 'https://github.com/mongodb/libmongocrypt.git' },
+    libVersion: { short: 'l', type: 'string', default: libmongocryptVersion },
+    clean: { short: 'c', type: 'boolean', default: false },
+    build: { short: 'b', type: 'boolean', default: false },
+    help: { short: 'h', type: 'boolean', default: false }
   };
 
   const args = util.parseArgs({ args: process.argv.slice(2), options, allowPositionals: false });
 
   if (args.values.help) {
     console.log(
-      `${process.argv[1]} ${[...Object.keys(options)]
+      `${path.basename(process.argv[1])} ${[...Object.keys(options)]
         .filter(k => k !== 'help')
         .map(k => `[--${k}=${options[k].type}]`)
         .join(' ')}`
@@ -30,8 +35,9 @@ async function parseArguments() {
   }
 
   return {
-    libmongocrypt: { url: args.values.url, ref: args.values.libversion },
-    clean: args.values.clean
+    libmongocrypt: { url: args.values.gitURL, ref: args.values.libVersion },
+    clean: args.values.clean,
+    build: args.values.build
   };
 }
 
@@ -49,24 +55,30 @@ function toFlags(object) {
 const args = await parseArguments();
 const libmongocryptRoot = path.resolve('_libmongocrypt');
 
-const currentLibMongoCryptBranch = await fs.readFile(path.join(libmongocryptRoot, '.git', 'HEAD'), 'utf8').catch(() => '')
-const libmongocryptAlreadyClonedAndCheckedOut = currentLibMongoCryptBranch.trim().endsWith(`r-${args.libmongocrypt.ref}`);
+const currentLibMongoCryptBranch = await fs
+  .readFile(path.join(libmongocryptRoot, '.git', 'HEAD'), 'utf8')
+  .catch(() => '');
+const libmongocryptAlreadyClonedAndCheckedOut = currentLibMongoCryptBranch
+  .trim()
+  .endsWith(`r-${args.libmongocrypt.ref}`);
 
-if (args.clean || !libmongocryptAlreadyClonedAndCheckedOut) {
+if (args.build && (args.clean || !libmongocryptAlreadyClonedAndCheckedOut)) {
   console.error('fetching libmongocrypt...', args.libmongocrypt);
   await fs.rm(libmongocryptRoot, { recursive: true, force: true });
   await run('git', ['clone', args.libmongocrypt.url, libmongocryptRoot]);
   await run('git', ['fetch', '--tags'], { cwd: libmongocryptRoot });
-  await run('git', ['checkout', args.libmongocrypt.ref, '-b', `r-${args.libmongocrypt.ref}`], { cwd: libmongocryptRoot });
-} else {
-  console.error('libmongocrypt already up to date...', args.libmongocrypt);
+  await run('git', ['checkout', args.libmongocrypt.ref, '-b', `r-${args.libmongocrypt.ref}`], {
+    cwd: libmongocryptRoot
+  });
 }
 
-const libmongocryptBuiltVersion = await fs.readFile(path.join(libmongocryptRoot, 'VERSION_CURRENT'), 'utf8').catch(() => '');
+const libmongocryptBuiltVersion = await fs
+  .readFile(path.join(libmongocryptRoot, 'VERSION_CURRENT'), 'utf8')
+  .catch(() => '');
 const libmongocryptAlreadyBuilt = libmongocryptBuiltVersion.trim() === args.libmongocrypt.ref;
 
-if (args.clean || !libmongocryptAlreadyBuilt) {
-  console.error('building libmongocrypt...\n', args);
+if (args.build && (args.clean || !libmongocryptAlreadyBuilt)) {
+  console.error('building libmongocrypt...\n', args.libmongocrypt);
 
   const nodeDepsRoot = path.resolve('deps');
   const nodeBuildRoot = path.resolve(nodeDepsRoot, 'tmp', 'libmongocrypt-build');
@@ -115,10 +127,55 @@ if (args.clean || !libmongocryptAlreadyBuilt) {
       ? toFlags({ DCMAKE_OSX_DEPLOYMENT_TARGET: '10.12' })
       : [];
 
-  await run('cmake', [...CMAKE_FLAGS, ...WINDOWS_CMAKE_FLAGS, ...MACOS_CMAKE_FLAGS, libmongocryptRoot], { cwd: nodeBuildRoot });
-  await run('cmake', ['--build', '.', '--target', 'install', '--config', 'RelWithDebInfo'], { cwd: nodeBuildRoot });
-} else {
-  console.error('libmongocrypt already built...');
+  await run(
+    'cmake',
+    [...CMAKE_FLAGS, ...WINDOWS_CMAKE_FLAGS, ...MACOS_CMAKE_FLAGS, libmongocryptRoot],
+    { cwd: nodeBuildRoot }
+  );
+  await run('cmake', ['--build', '.', '--target', 'install', '--config', 'RelWithDebInfo'], {
+    cwd: nodeBuildRoot
+  });
+}
+
+if (!args.build) {
+  const downloadURL =
+    args.libmongocrypt.ref === 'latest'
+      ? 'https://mciuploads.s3.amazonaws.com/libmongocrypt/all/master/latest/libmongocrypt-all.tar.gz'
+      : `https://mciuploads.s3.amazonaws.com/libmongocrypt/all/${args.libmongocrypt.ref}/libmongocrypt-all.tar.gz`;
+
+  console.error('downloading libmongocrypt...', downloadURL);
+  const destination = `_libmongocrypt-${args.libmongocrypt.ref}`;
+
+  await fs.rm(destination, { recursive: true, force: true });
+  await fs.mkdir(destination);
+
+  const platformMatrix = {
+    ['darwin-arm64']: 'macos',
+    ['darwin-x64']: 'macos',
+    ['linux-ppc64']: 'rhel-71-ppc64el',
+    ['linux-s390x']: 'rhel72-zseries-test',
+    ['linux-arm64']: 'ubuntu1804-arm64',
+    ['linux-x64']: 'rhel-70-64-bit',
+    ['win32-x64']: 'windows-test'
+  };
+
+  const platform = platformMatrix[`${process.platform}-${process.arch}`];
+  if (platform == null) throw new Error(`${process.platform}-${process.arch}`);
+
+  const unzip = child_process.spawn('tar', ['-xz', '-C', destination, ...new Set(Object.values(platformMatrix))], {
+    stdio: ['pipe']
+  });
+
+  const [response] = await events.once(https.get(downloadURL), 'response');
+
+  const start = performance.now();
+  await pipeline(response, unzip.stdin);
+  const end = performance.now();
+
+  console.error(`downloaded libmongocrypt in ${(end - start) / 1000} secs...`);
+
+  await fs.rm('deps', { recursive: true, force: true });
+  await fs.cp(path.join(destination, platform, 'nocrypto'), 'deps', { recursive: true });
 }
 
 await run('npm', ['install', '--ignore-scripts']);

@@ -25,4 +25,4 @@ xunit.xml
 lib
 prebuilds
 
-_libmongocrypt/
+_libmongocrypt*
