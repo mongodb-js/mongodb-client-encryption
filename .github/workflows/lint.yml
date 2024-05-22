@@ -1,0 +1,38 @@
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    name: Lint ${{ matrix.lint-target }}
+    strategy:
+      matrix:
+        lint-target: ["c++", "typescript"]
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+    - name: "Build libmongocrypt"
+      shell: bash
+      run: |
+        node .github/scripts/libmongocrypt.mjs
+        npm install
+        npm run prebuild
+        
+    - if: matrix.lint-target == 'c++'
+      shell: bash
+      run: |
+        npm run check:clang-format
+
+    - if: matrix.lint-target == 'typescript'
+      shell: bash
+      run: |
+        npm run check:eslint
