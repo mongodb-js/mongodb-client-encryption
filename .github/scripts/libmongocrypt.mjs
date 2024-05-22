@@ -5,7 +5,7 @@ import child_process from 'node:child_process';
 import events from 'node:events';
 import path from 'node:path';
 import https from 'node:https';
-import { pipeline } from 'node:stream/promises';
+import stream from 'node:stream/promises';
 
 async function parseArguments() {
   const jsonImport = {
@@ -169,7 +169,7 @@ if (!args.build) {
   const [response] = await events.once(https.get(downloadURL), 'response');
 
   const start = performance.now();
-  await pipeline(response, unzip.stdin);
+  await stream.pipeline(response, unzip.stdin);
   const end = performance.now();
 
   console.error(`downloaded libmongocrypt in ${(end - start) / 1000} secs...`);
