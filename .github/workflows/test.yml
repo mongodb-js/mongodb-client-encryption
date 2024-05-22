@@ -10,11 +10,12 @@ jobs:
   build:
 
     name: Node ${{ matrix.node-version }}
-    runs-on: ubuntu-latest
+    runs-on: ${{matrix.platform}}
 
     strategy:
       matrix:
         node-version: [16.x, 18.x, 20.x]
+        platform: [ubuntu-latest]
 
     steps:
     - uses: actions/checkout@v4
