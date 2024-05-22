@@ -72,7 +72,7 @@ jobs:
     - if: matrix.build-mode == 'manual'
       shell: bash
       run: |
-        node ./github/workflows/libmongocrypt.mjs 
+        node .github/scripts/libmongocrypt.mjs
         npm install
         npm run prebuild
 
