@@ -162,7 +162,7 @@ if (!args.build) {
   const platform = platformMatrix[`${process.platform}-${process.arch}`];
   if (platform == null) throw new Error(`${process.platform}-${process.arch}`);
 
-  const unzip = child_process.spawn('tar', ['-xz', '-C', destination, ...new Set(Object.values(platformMatrix))], {
+  const unzip = child_process.spawn('tar', ['-xz', '-C', destination, `${platform}/nocrypto`], {
     stdio: ['pipe']
   });
 
@@ -176,6 +176,9 @@ if (!args.build) {
 
   await fs.rm('deps', { recursive: true, force: true });
   await fs.cp(path.join(destination, platform, 'nocrypto'), 'deps', { recursive: true });
+  if (await fs.access(path.join('deps', 'lib64')).then(() => true, () => false)) {
+    await fs.rename(path.join('deps', 'lib64'), path.join('deps', 'lib'));
+  }
 }
 
 await run('npm', ['install', '--ignore-scripts']);
