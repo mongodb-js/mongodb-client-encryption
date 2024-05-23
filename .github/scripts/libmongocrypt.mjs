@@ -171,9 +171,9 @@ export async function downloadLibMongoCrypt(nodeDepsRoot, { ref }) {
 
   console.error(`Platform: ${detectedPlatform} Prebuild: ${prebuild}`);
 
-  const unzipArgs = ['-xzv', '-C', destination, `${prebuild}/nocrypto`];
+  const unzipArgs = ['-xzv', '-C', `_libmongocrypt-${ref}`, `${prebuild}/nocrypto`];
   console.error(`+ tar ${unzipArgs.join(' ')}`);
-  const unzip = child_process.spawn('tar', unzipArgs, { stdio: ['pipe', 'inherit'] });
+  const unzip = child_process.spawn('tar', unzipArgs, { stdio: ['pipe', 'inherit'], cwd: resolveRoot('.') });
 
   const [response] = await events.once(https.get(downloadURL), 'response');
 
