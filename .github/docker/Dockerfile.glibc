@@ -4,9 +4,8 @@ FROM $NODE_BUILD_IMAGE AS build
 WORKDIR /mongodb-client-encryption
 COPY . .
 
-RUN node ./.github/scripts/libmongocrypt.mjs
-RUN mkdir -p /out && cp -R /mongodb-client-encryption/prebuilds/ /out
+RUN node /mongodb-client-encryption/.github/scripts/libmongocrypt.mjs
 
 FROM scratch
 
-COPY --from=build /out /
+COPY --from=build /mongodb-client-encryption/prebuilds/ /

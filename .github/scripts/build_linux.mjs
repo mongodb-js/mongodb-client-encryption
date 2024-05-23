@@ -44,11 +44,18 @@ async function main() {
     '--platform',
     'linux/s390x,linux/arm64,linux/amd64',
     '--output',
-    'type=local,dest=.,platform-split=false',
+    'type=local,dest=./prebuilds,platform-split=false',
     '-f',
     resolveRoot('./.github/docker/Dockerfile.glibc'),
     resolveRoot('.')
   ]);
+
+  /**
+   * Running locally and want a fresh start?
+   *
+   * docker buildx prune --force
+   * docker buildx rm builder
+   */
 }
 
 await main();
