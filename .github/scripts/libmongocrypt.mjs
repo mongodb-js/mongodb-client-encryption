@@ -56,11 +56,16 @@ async function parseArguments() {
 
 /** `xtrace` style command runner, uses spawn so that stdio is inherited */
 async function run(command, args = [], options = {}) {
-  console.error(`+ ${command} ${args.join(' ')}`, options.cwd ? `(in: ${options.cwd})` : '');
-  await events.once(
-    child_process.spawn(command, args, { stdio: 'inherit', cwd: resolveRoot('.'), ...options }),
-    'exit'
-  );
+  const commandDetails = `+ ${command} ${args.join(' ')}${options.cwd ? ` (in: ${options.cwd})` : ''}`;
+  console.error(commandDetails);
+  const proc = child_process.spawn(command, args, {
+    stdio: 'inherit',
+    cwd: resolveRoot('.'),
+    ...options
+  });
+  await events.once(proc, 'exit');
+
+  if (proc.exitCode != 0) throw new Error(`CRASH(${proc.exitCode}): ${commandDetails}`);
 }
 
 /** CLI flag maker: `toFlags({a: 1, b: 2})` yields `['-a=1', '-b=2']` */
