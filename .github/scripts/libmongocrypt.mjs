@@ -6,17 +6,30 @@ import events from 'node:events';
 import path from 'node:path';
 import https from 'node:https';
 import stream from 'node:stream/promises';
+import url from 'node:url';
+
+const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
+
+/** Resolves to the root of this repository */
+function resolveRoot(...paths) {
+  return path.resolve(__dirname, '..', '..', ...paths);
+}
+
+async function exists(fsPath) {
+  try {
+    await fs.access(fsPath);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 async function parseArguments() {
-  const jsonImport = {
-    [process.version.split('.').at(0) === 'v16' ? 'assert' : 'with']: { type: 'json' }
-  };
-  const pkg = (await import('../../package.json', jsonImport)).default;
-  const libmongocryptVersion = pkg['mongodb:libmongocrypt'];
+  const pkg = JSON.parse(await fs.readFile(resolveRoot('package.json'), 'utf8'));
 
   const options = {
     gitURL: { short: 'u', type: 'string', default: 'https://github.com/mongodb/libmongocrypt.git' },
-    libVersion: { short: 'l', type: 'string', default: libmongocryptVersion },
+    libVersion: { short: 'l', type: 'string', default: pkg['mongodb:libmongocrypt'] },
     clean: { short: 'c', type: 'boolean', default: false },
     build: { short: 'b', type: 'boolean', default: false },
     help: { short: 'h', type: 'boolean', default: false }
@@ -44,7 +57,10 @@ async function parseArguments() {
 /** `xtrace` style command runner, uses spawn so that stdio is inherited */
 async function run(command, args = [], options = {}) {
   console.error(`+ ${command} ${args.join(' ')}`, options.cwd ? `(in: ${options.cwd})` : '');
-  await events.once(child_process.spawn(command, args, { stdio: 'inherit', ...options }), 'exit');
+  await events.once(
+    child_process.spawn(command, args, { stdio: 'inherit', cwd: resolveRoot('.'), ...options }),
+    'exit'
+  );
 }
 
 /** CLI flag maker: `toFlags({a: 1, b: 2})` yields `['-a=1', '-b=2']` */
@@ -52,36 +68,21 @@ function toFlags(object) {
   return Array.from(Object.entries(object)).map(([k, v]) => `-${k}=${v}`);
 }
 
-const args = await parseArguments();
-const libmongocryptRoot = path.resolve('_libmongocrypt');
-
-const currentLibMongoCryptBranch = await fs
-  .readFile(path.join(libmongocryptRoot, '.git', 'HEAD'), 'utf8')
-  .catch(() => '');
-const libmongocryptAlreadyClonedAndCheckedOut = currentLibMongoCryptBranch
-  .trim()
-  .endsWith(`r-${args.libmongocrypt.ref}`);
-
-if (args.build && (args.clean || !libmongocryptAlreadyClonedAndCheckedOut)) {
-  console.error('fetching libmongocrypt...', args.libmongocrypt);
+export async function cloneLibMongoCrypt(libmongocryptRoot, { url, ref }) {
+  console.error('fetching libmongocrypt...', { url, ref });
   await fs.rm(libmongocryptRoot, { recursive: true, force: true });
-  await run('git', ['clone', args.libmongocrypt.url, libmongocryptRoot]);
-  await run('git', ['fetch', '--tags'], { cwd: libmongocryptRoot });
-  await run('git', ['checkout', args.libmongocrypt.ref, '-b', `r-${args.libmongocrypt.ref}`], {
-    cwd: libmongocryptRoot
-  });
+  await run('git', ['clone', url, libmongocryptRoot]);
+  if (ref !== 'latest') {
+    // Support "latest" as leaving the clone as-is so whatever the default branch name is works
+    await run('git', ['fetch', '--tags'], { cwd: libmongocryptRoot });
+    await run('git', ['checkout', ref, '-b', `r-${ref}`], { cwd: libmongocryptRoot });
+  }
 }
 
-const libmongocryptBuiltVersion = await fs
-  .readFile(path.join(libmongocryptRoot, 'VERSION_CURRENT'), 'utf8')
-  .catch(() => '');
-const libmongocryptAlreadyBuilt = libmongocryptBuiltVersion.trim() === args.libmongocrypt.ref;
+export async function buildLibMongoCrypt(libmongocryptRoot, nodeDepsRoot) {
+  console.error('building libmongocrypt...');
 
-if (args.build && (args.clean || !libmongocryptAlreadyBuilt)) {
-  console.error('building libmongocrypt...\n', args.libmongocrypt);
-
-  const nodeDepsRoot = path.resolve('deps');
-  const nodeBuildRoot = path.resolve(nodeDepsRoot, 'tmp', 'libmongocrypt-build');
+  const nodeBuildRoot = resolveRoot(nodeDepsRoot, 'tmp', 'libmongocrypt-build');
 
   await fs.rm(nodeBuildRoot, { recursive: true, force: true });
   await fs.mkdir(nodeBuildRoot, { recursive: true });
@@ -137,14 +138,14 @@ if (args.build && (args.clean || !libmongocryptAlreadyBuilt)) {
   });
 }
 
-if (!args.build) {
+export async function downloadLibMongoCrypt(nodeDepsRoot, { ref }) {
   const downloadURL =
-    args.libmongocrypt.ref === 'latest'
+    ref === 'latest'
       ? 'https://mciuploads.s3.amazonaws.com/libmongocrypt/all/master/latest/libmongocrypt-all.tar.gz'
-      : `https://mciuploads.s3.amazonaws.com/libmongocrypt/all/${args.libmongocrypt.ref}/libmongocrypt-all.tar.gz`;
+      : `https://mciuploads.s3.amazonaws.com/libmongocrypt/all/${ref}/libmongocrypt-all.tar.gz`;
 
   console.error('downloading libmongocrypt...', downloadURL);
-  const destination = `_libmongocrypt-${args.libmongocrypt.ref}`;
+  const destination = resolveRoot(`_libmongocrypt-${ref}`);
 
   await fs.rm(destination, { recursive: true, force: true });
   await fs.mkdir(destination);
@@ -159,12 +160,15 @@ if (!args.build) {
     ['win32-x64']: 'windows-test'
   };
 
-  const platform = platformMatrix[`${process.platform}-${process.arch}`];
-  if (platform == null) throw new Error(`${process.platform}-${process.arch}`);
+  const detectedPlatform = `${process.platform}-${process.arch}`;
+  const prebuild = platformMatrix[detectedPlatform];
+  if (prebuild == null) throw new Error(`Unsupported: ${detectedPlatform}`);
 
-  const unzip = child_process.spawn('tar', ['-xz', '-C', destination, `${platform}/nocrypto`], {
-    stdio: ['pipe']
-  });
+  console.error(`Platform: ${detectedPlatform} Prebuild: ${prebuild}`);
+
+  const unzipArgs = ['-xzv', '-C', destination, `${prebuild}/nocrypto`];
+  console.error(`+ tar ${unzipArgs.join(' ')}`);
+  const unzip = child_process.spawn('tar', unzipArgs, { stdio: ['pipe', 'inherit'] });
 
   const [response] = await events.once(https.get(downloadURL), 'response');
 
@@ -174,12 +178,53 @@ if (!args.build) {
 
   console.error(`downloaded libmongocrypt in ${(end - start) / 1000} secs...`);
 
-  await fs.rm('deps', { recursive: true, force: true });
-  await fs.cp(path.join(destination, platform, 'nocrypto'), 'deps', { recursive: true });
-  if (await fs.access(path.join('deps', 'lib64')).then(() => true, () => false)) {
-    await fs.rename(path.join('deps', 'lib64'), path.join('deps', 'lib'));
+  await fs.rm(nodeDepsRoot, { recursive: true, force: true });
+  await fs.cp(resolveRoot(destination, prebuild, 'nocrypto'), nodeDepsRoot, { recursive: true });
+  if (await exists(path.join(nodeDepsRoot, 'lib64'))) {
+    await fs.rename(path.join(nodeDepsRoot, 'lib64'), path.join(nodeDepsRoot, 'lib'));
   }
 }
 
-await run('npm', ['install', '--ignore-scripts']);
-await run('npm', ['run', 'rebuild'], { env: { ...process.env, BUILD_TYPE: 'static' } });
+async function main() {
+  const { libmongocrypt, build, clean } = await parseArguments();
+
+  const nodeDepsDir = resolveRoot('deps');
+
+  if (build) {
+    const libmongocryptCloneDir = resolveRoot('_libmongocrypt');
+
+    const currentLibMongoCryptBranch = await fs
+      .readFile(path.join(libmongocryptCloneDir, '.git', 'HEAD'), 'utf8')
+      .catch(() => '');
+    const isClonedAndCheckedOut = currentLibMongoCryptBranch
+      .trim()
+      .endsWith(`r-${libmongocrypt.ref}`);
+
+    if (clean || !isClonedAndCheckedOut) {
+      await cloneLibMongoCrypt(libmongocryptCloneDir, libmongocrypt);
+    }
+
+    const libmongocryptBuiltVersion = await fs
+      .readFile(path.join(libmongocryptCloneDir, 'VERSION_CURRENT'), 'utf8')
+      .catch(() => '');
+    const isBuilt = libmongocryptBuiltVersion.trim() === libmongocrypt.ref;
+
+    if (clean || !isBuilt) {
+      await buildLibMongoCrypt(libmongocryptCloneDir, nodeDepsDir);
+    }
+  } else {
+    // Download
+    await downloadLibMongoCrypt(nodeDepsDir, libmongocrypt);
+  }
+
+  await fs.rm(resolveRoot('build'), { force: true, recursive: true });
+  await fs.rm(resolveRoot('prebuilds'), { force: true, recursive: true });
+
+  // install with "ignore-scripts" so that we don't attempt to download a prebuild
+  await run('npm', ['install', '--ignore-scripts']);
+  // The prebuild command will make both a .node file in `./build` (local and CI testing will run on current code)
+  // it will also produce `./prebuild/xx.tgz`. prebuild has GH upload functionality.
+  await run('npm', ['run', 'prebuild']);
+}
+
+await main();
