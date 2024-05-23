@@ -1,0 +1,12 @@
+ARG NODE_BUILD_IMAGE=node:16.20.1-bullseye
+FROM $NODE_BUILD_IMAGE AS build
+
+WORKDIR /mongodb-client-encryption
+COPY . .
+
+RUN node ./.github/scripts/libmongocrypt.mjs
+RUN mkdir -p /out && cp -R /mongodb-client-encryption/prebuilds/ /out
+
+FROM scratch
+
+COPY --from=build /out /

@@ -8,23 +8,46 @@ on:
 name: build
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  builds:
+    outputs:
+      artifact_id: ${{ steps.upload.outputs.artifact-id }}
     strategy:
-        matrix:
-          node: ['20.x'] # '16.x', '18.x',
-    name: Node.js ${{ matrix.node }} build
+      matrix:
+        os: [ubuntu-latest, windows-2019, macos-11, macos-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - if: ${{ runner.os == 'Linux' }}
+        name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - if: ${{ runner.os == 'Linux' }}
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - if: ${{ runner.os == 'Linux' }}
+        name: Build ${{ runner.os }} Prebuild
+        run: node .github/scripts/build_linux.mjs
+
+      - if: ${{ runner.os != 'Linux' }}
+        name: Setup nodejs
+        uses: actions/setup-node@v3
         with:
-          node-version: ${{ matrix.node }}
+          node-version: 'lts/*'
           cache: 'npm'
           registry-url: 'https://registry.npmjs.org'
 
-      - run: npm install -g npm@latest
+      - if: ${{ runner.os != 'Linux' }}
+        name: Build ${{ runner.os }} Prebuild
+        run: node .github/scripts/libmongocrypt.mjs
         shell: bash
 
-      - run: node .github/scripts/libmongocrypt.mjs
-        shell: bash
+      - id: upload
+        name: Upload prebuild
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ matrix.os }}
+          path: prebuilds/
+          if-no-files-found: 'error'
+          retention-days: 1
