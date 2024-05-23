@@ -59,6 +59,7 @@ async function run(command, args = [], options = {}) {
   const commandDetails = `+ ${command} ${args.join(' ')}${options.cwd ? ` (in: ${options.cwd})` : ''}`;
   console.error(commandDetails);
   const proc = child_process.spawn(command, args, {
+    shell: process.platform === 'win32',
     stdio: 'inherit',
     cwd: resolveRoot('.'),
     ...options
