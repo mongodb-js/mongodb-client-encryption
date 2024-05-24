@@ -8,39 +8,18 @@ on:
 name: build
 
 jobs:
-  builds:
+  macos_windows_builds:
     outputs:
       artifact_id: ${{ steps.upload.outputs.artifact-id }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-2019, macos-11, macos-latest]
+        os: [macos-11, macos-latest, windows-2019]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
 
-      - if: ${{ runner.os == 'Linux' }}
-        name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
-      - if: ${{ runner.os == 'Linux' }}
-        name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - if: ${{ runner.os == 'Linux' }}
-        name: Build ${{ runner.os }} Prebuild
-        run: node .github/scripts/build_linux.mjs
-
-      - if: ${{ runner.os != 'Linux' }}
-        name: Setup nodejs
-        uses: actions/setup-node@v4
-        with:
-          node-version: 'lts/*'
-          cache: 'npm'
-          registry-url: 'https://registry.npmjs.org'
-
-      - if: ${{ runner.os != 'Linux' }}
-        name: Build ${{ runner.os }} Prebuild
-        run: node .github/scripts/libmongocrypt.mjs
+      - name: Build ${{ matrix.os }} Prebuild
+        run: node .github/scripts/libmongocrypt.mjs ${{ runner.os == 'Windows' && '--build' || '' }}
         shell: bash
 
       - id: upload
@@ -48,6 +27,31 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: build-${{ matrix.os }}
+          path: prebuilds/
+          if-no-files-found: 'error'
+          retention-days: 1
+
+  linux_builds:
+    outputs:
+      artifact_id: ${{ steps.upload.outputs.artifact-id }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Run Buildx
+        run: node .github/scripts/buildx.mjs
+
+      - id: upload
+        name: Upload prebuild
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-linux
           path: prebuilds/
           if-no-files-found: 'error'
           retention-days: 1

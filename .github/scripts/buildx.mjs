@@ -13,7 +13,7 @@ function resolveRoot(...paths) {
 
 /** `xtrace` style command runner, uses spawn so that stdio is inherited */
 async function run(command, args = [], options = {}) {
-    const commandDetails = `+ ${command} ${args.join(' ')}${options.cwd ? ` (in: ${options.cwd})` : ''}`
+  const commandDetails = `+ ${command} ${args.join(' ')}${options.cwd ? ` (in: ${options.cwd})` : ''}`;
   console.error(commandDetails);
   const proc = child_process.spawn(command, args, {
     stdio: 'inherit',
@@ -37,16 +37,23 @@ async function main() {
     await run('docker', ['buildx', 'create', '--name', 'builder', '--bootstrap', '--use']);
   }
 
+  const platform =
+    process.platform === 'win32' ? 'windows/amd64' : 'linux/s390x,linux/arm64,linux/amd64';
+  const dockerFile =
+    process.platform === 'win32'
+      ? resolveRoot('./.github/docker/Dockerfile.win')
+      : resolveRoot('./.github/docker/Dockerfile.glibc');
+
   await run('docker', [
     'buildx',
     'build',
     // '--progress=plain', // By default buildx detects tty and does some fancy collapsing, set progress=plain for debugging
     '--platform',
-    'linux/s390x,linux/arm64,linux/amd64',
+    platform,
     '--output',
     'type=local,dest=./prebuilds,platform-split=false',
     '-f',
-    resolveRoot('./.github/docker/Dockerfile.glibc'),
+    dockerFile,
     resolveRoot('.')
   ]);
 
