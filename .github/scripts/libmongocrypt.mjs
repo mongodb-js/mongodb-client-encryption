@@ -232,7 +232,7 @@ async function main() {
   // install with "ignore-scripts" so that we don't attempt to download a prebuild
   await run('npm', ['install', '--ignore-scripts']);
   // The prebuild command will make both a .node file in `./build` (local and CI testing will run on current code)
-  // it will also produce `./prebuild/xx.tgz`. prebuild has GH upload functionality.
+  // it will also produce `./prebuilds/mongodb-client-encryption-vVERSION-napi-vNAPI_VERSION-OS-ARCH.tar.gz`.
   await run('npm', ['run', 'prebuild']);
 }
 

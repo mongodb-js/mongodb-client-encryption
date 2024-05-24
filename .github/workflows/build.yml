@@ -9,8 +9,6 @@ name: build
 
 jobs:
   macos_windows_builds:
-    outputs:
-      artifact_id: ${{ steps.upload.outputs.artifact-id }}
     strategy:
       matrix:
         os: [macos-11, macos-latest, windows-2019]
@@ -30,6 +28,7 @@ jobs:
           path: prebuilds/
           if-no-files-found: 'error'
           retention-days: 1
+          compression-level: 0
 
   linux_builds:
     outputs:
@@ -55,3 +54,23 @@ jobs:
           path: prebuilds/
           if-no-files-found: 'error'
           retention-days: 1
+          compression-level: 0
+
+  collect:
+    needs: [linux_builds, macos_windows_builds]
+    runs-on: ubunutu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+
+      - name: Display structure of downloaded files
+        run: ls -R
+
+      - id: upload
+        name: Upload all prebuilds
+        uses: actions/upload-artifact@v4
+        with:
+          name: all-build
+          path: '*.tar.gz'
+          if-no-files-found: 'error'
+          retention-days: 1
+          compression-level: 0
