@@ -36,7 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        linux_arch: [linux/s390x, linux/arm64, linux/amd64]
+        linux_arch: [s390x, arm64, amd64]
     steps:
       - uses: actions/checkout@v4
 
@@ -49,13 +49,13 @@ jobs:
       - name: Run Buildx
         run: |
           docker buildx create --name builder --bootstrap --use
-          docker buildx build --platform ${{ matrix.linux_arch }} --output type=local,dest=./prebuilds,platform-split=false -f ./.github/docker/Dockerfile.glibc .
+          docker buildx build --platform linux/${{ matrix.linux_arch }} --output type=local,dest=./prebuilds,platform-split=false -f ./.github/docker/Dockerfile.glibc .
 
       - id: upload
         name: Upload prebuild
         uses: actions/upload-artifact@v4
         with:
-          name: build-linux
+          name: build-linux-${{ matrix.linux_arch }}
           path: prebuilds/
           if-no-files-found: 'error'
           retention-days: 1
