@@ -8,7 +8,7 @@ on:
 name: build
 
 jobs:
-  macos_windows_builds:
+  host_builds:
     strategy:
       matrix:
         os: [macos-11, macos-latest, windows-2019]
@@ -30,10 +30,13 @@ jobs:
           retention-days: 1
           compression-level: 0
 
-  linux_builds:
+  container_builds:
     outputs:
       artifact_id: ${{ steps.upload.outputs.artifact-id }}
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        linux_arch: [linux/s390x, linux/arm64, linux/amd64]
     steps:
       - uses: actions/checkout@v4
 
@@ -44,7 +47,9 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Run Buildx
-        run: node .github/scripts/buildx.mjs
+        run: |
+          docker buildx create --name builder --bootstrap --use
+          docker buildx build --platform ${{ matrix.linux_arch }} --output type=local,dest=./prebuilds,platform-split=false -f ./.github/docker/Dockerfile.glibc .
 
       - id: upload
         name: Upload prebuild
@@ -57,7 +62,7 @@ jobs:
           compression-level: 0
 
   collect:
-    needs: [linux_builds, macos_windows_builds]
+    needs: [host_builds, container_builds]
     runs-on: ubunutu-latest
     steps:
       - uses: actions/download-artifact@v4
