@@ -59,6 +59,7 @@ async function run(command, args = [], options = {}) {
   const commandDetails = `+ ${command} ${args.join(' ')}${options.cwd ? ` (in: ${options.cwd})` : ''}`;
   console.error(commandDetails);
   const proc = child_process.spawn(command, args, {
+    shell: process.platform === 'win32',
     stdio: 'inherit',
     cwd: resolveRoot('.'),
     ...options
@@ -171,9 +172,12 @@ export async function downloadLibMongoCrypt(nodeDepsRoot, { ref }) {
 
   console.error(`Platform: ${detectedPlatform} Prebuild: ${prebuild}`);
 
-  const unzipArgs = ['-xzv', '-C', destination, `${prebuild}/nocrypto`];
+  const unzipArgs = ['-xzv', '-C', `_libmongocrypt-${ref}`, `${prebuild}/nocrypto`];
   console.error(`+ tar ${unzipArgs.join(' ')}`);
-  const unzip = child_process.spawn('tar', unzipArgs, { stdio: ['pipe', 'inherit'] });
+  const unzip = child_process.spawn('tar', unzipArgs, {
+    stdio: ['pipe', 'inherit'],
+    cwd: resolveRoot('.')
+  });
 
   const [response] = await events.once(https.get(downloadURL), 'response');
 
@@ -228,7 +232,7 @@ async function main() {
   // install with "ignore-scripts" so that we don't attempt to download a prebuild
   await run('npm', ['install', '--ignore-scripts']);
   // The prebuild command will make both a .node file in `./build` (local and CI testing will run on current code)
-  // it will also produce `./prebuild/xx.tgz`. prebuild has GH upload functionality.
+  // it will also produce `./prebuilds/mongodb-client-encryption-vVERSION-napi-vNAPI_VERSION-OS-ARCH.tar.gz`.
   await run('npm', ['run', 'prebuild']);
 }
 
