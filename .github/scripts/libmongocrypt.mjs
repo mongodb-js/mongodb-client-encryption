@@ -189,8 +189,11 @@ export async function downloadLibMongoCrypt(nodeDepsRoot, { ref }) {
 
   await fs.rm(nodeDepsRoot, { recursive: true, force: true });
   await fs.cp(resolveRoot(destination, prebuild, 'nocrypto'), nodeDepsRoot, { recursive: true });
-  if (await exists(path.join(nodeDepsRoot, 'lib64'))) {
-    await fs.rename(path.join(nodeDepsRoot, 'lib64'), path.join(nodeDepsRoot, 'lib'));
+  const currentPath = path.join(nodeDepsRoot, 'lib64');
+  try {
+    await fs.rename(currentPath, path.join(nodeDepsRoot, 'lib'));
+  } catch (error) {
+    console.error(`error renaming ${currentPath}: ${error.message}`);
   }
 }
 
