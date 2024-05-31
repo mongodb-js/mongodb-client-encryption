@@ -20,6 +20,10 @@ jobs:
         run: node .github/scripts/libmongocrypt.mjs ${{ runner.os == 'Windows' && '--build' || '' }}
         shell: bash
 
+      - name: Test ${{ matrix.os }}
+        shell: bash
+        run: npm run test
+
       - id: upload
         name: Upload prebuild
         uses: actions/upload-artifact@v4
