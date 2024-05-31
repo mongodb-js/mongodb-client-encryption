@@ -11,7 +11,7 @@ namespace node_mongocrypt {
 
 using namespace Napi;
 
-// anonymous namepace for helpers
+// anonymous namespace for helpers
 namespace {
 struct InstanceData {
     Reference<Function> MongoCryptContextCtor;
@@ -514,6 +514,10 @@ MongoCrypt::MongoCrypt(const CallbackInfo& info)
         mongocrypt_setopt_bypass_query_analysis(_mongo_crypt.get());
     }
 
+    if (options.Get("rangeV2").ToBoolean()) {
+        mongocrypt_setopt_use_range_v2(_mongo_crypt.get());
+    }
+
     mongocrypt_setopt_use_need_kms_credentials_state(_mongo_crypt.get());
 
     // Initialize after all options are set.
@@ -751,7 +755,7 @@ Value MongoCrypt::MakeRewrapManyDataKeyContext(const CallbackInfo& info) {
 Function MongoCrypt::GetCallback(const char* name) {
     Napi::Value storage = Value().Get("__callbackStorage");
     if (!storage.IsObject()) {
-        throw Error::New(Env(), "Cannot get callbacks becauses none were registered");
+        throw Error::New(Env(), "Cannot get callbacks because none were registered");
     }
     Napi::Value entry = storage.As<Object>().Get(name);
     if (!entry.IsFunction()) {
