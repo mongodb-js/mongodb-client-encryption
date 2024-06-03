@@ -16,6 +16,7 @@
     "lib": "lib"
   },
   "scripts": {
+    "install:libmongocrypt": "node .github/scripts/libmongocrypt.mjs",
     "install": "prebuild-install --runtime napi || node-gyp rebuild",
     "clang-format": "clang-format --style=file:.clang-format --Werror -i addon/*",
     "check:eslint": "eslint src test",

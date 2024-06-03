@@ -24,7 +24,7 @@ const REQUIRED_FILES = [
 describe(`Release ${packFile}`, function () {
   this.timeout(10000);
 
-  beforeEach(function() {
+  beforeEach(function () {
     if (process.arch !== 'x64') {
       this.skip();
     }
