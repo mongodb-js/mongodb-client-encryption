@@ -5,6 +5,7 @@ WORKDIR /mongodb-client-encryption
 COPY . .
 
 RUN node /mongodb-client-encryption/.github/scripts/libmongocrypt.mjs
+RUN npm run test
 
 FROM scratch
 
