@@ -7,6 +7,11 @@ on:
 
 name: Build and Test
 
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
+
 jobs:
   host_builds:
     strategy:
@@ -65,21 +70,31 @@ jobs:
           retention-days: 1
           compression-level: 0
 
-  collect:
+  release_please:
     needs: [host_builds, container_builds]
     runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
     steps:
-      - uses: actions/download-artifact@v4
+      - id: release
+        uses: googleapis/release-please-action@v4
 
-      - name: Display structure of downloaded files
-        run: ls -R
-
-      - id: upload
-        name: Upload all prebuilds
-        uses: actions/upload-artifact@v4
-        with:
-          name: all-build
-          path: '*.tar.gz'
-          if-no-files-found: 'error'
-          retention-days: 1
-          compression-level: 0
+  sign_and_upload:
+    needs: [release_please]
+    if: ${{ needs.release_please.outputs.release_created }}
+    runs-on: ubuntu-latest
+    environment: release
+    steps:
+      - uses: actions/checkout@v4
+      - name: actions/setup
+        uses: ./.github/actions/setup
+      - name: actions/sign_and_upload_package
+        uses: ./.github/actions/sign_and_upload_package
+        with: 
+          aws_role_arn: ${{ secrets.AWS_ROLE_ARN }}
+          aws_region_name: 'us-east-1'
+          aws_secret_id: ${{ secrets.AWS_SECRET_ID }}
+          npm_package_name: 'mongodb-client-encryption'
+      - run: npm publish --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
