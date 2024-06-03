@@ -13,7 +13,6 @@ jobs:
       matrix:
         os: [macos-11, macos-latest, windows-2019]
     runs-on: ${{ matrix.os }}
-    name: ${{ matrox.os }}
     steps:
       - uses: actions/checkout@v4
 
@@ -42,7 +41,6 @@ jobs:
     strategy:
       matrix:
         linux_arch: [s390x, arm64, amd64]
-    name: ${{ matrox.linux_arch }}
     steps:
       - uses: actions/checkout@v4
 
