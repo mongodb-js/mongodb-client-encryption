@@ -45,7 +45,9 @@ describe(`Release ${packFile}`, function () {
   });
 
   afterEach(() => {
-    fs.unlinkSync(packFile);
+    if (process.arch === 'x64') {
+      fs.unlinkSync(packFile);
+    }
   });
 
   for (const requiredFile of REQUIRED_FILES) {
