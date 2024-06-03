@@ -79,3 +79,21 @@ jobs:
           if-no-files-found: 'error'
           retention-days: 1
           compression-level: 0
+
+  sign_and_upload:
+    needs: [host_builds, container_builds]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: actions/setup
+        uses: ./.github/actions/setup
+      - name: actions/sign_and_upload_package
+        uses: ./.github/actions/sign_and_upload_package
+        with: 
+          garasign_username: ${{ secrets.GRS_CONFIG_USER1_USERNAME }}
+          garasign_password: ${{ secrets.GRS_CONFIG_USER1_PASSWORD }}
+          artifactory_username: ${{ secrets.ARTIFACTORY_USER }}
+          artifactory_password: ${{ secrets.ARTIFACTORY_PASSWORD }}
+      # - run: npm publish --provenance
+      #  env:
+      #    NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
