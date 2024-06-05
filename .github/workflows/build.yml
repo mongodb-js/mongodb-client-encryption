@@ -63,7 +63,7 @@ jobs:
 
   collect:
     needs: [host_builds, container_builds]
-    runs-on: ubunutu-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
 
