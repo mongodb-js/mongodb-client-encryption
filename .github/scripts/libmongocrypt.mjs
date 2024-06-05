@@ -15,15 +15,6 @@ function resolveRoot(...paths) {
   return path.resolve(__dirname, '..', '..', ...paths);
 }
 
-async function exists(fsPath) {
-  try {
-    await fs.access(fsPath);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 async function parseArguments() {
   const pkg = JSON.parse(await fs.readFile(resolveRoot('package.json'), 'utf8'));
 
