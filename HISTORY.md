@@ -2,6 +2,97 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [7.0.0](https://github.com/mongodb-js/mongodb-client-encryption/compare/v6.0.1...v7.0.0) (2024-06-10)
+
+
+### ⚠ BREAKING CHANGES
+
+* **NODE-5420:** remove JS bindings from libmongocrypt ([#667](https://github.com/mongodb-js/mongodb-client-encryption/issues/667))
+* **NODE-5417:** bump minimum Node.js version to v16.20.1 ([#670](https://github.com/mongodb-js/mongodb-client-encryption/issues/670))
+* **NODE-3849:** update dependencies and sync tooling ([#241](https://github.com/mongodb-js/mongodb-client-encryption/issues/241))
+
+### Features
+
+* add a useful error message if we can't connect to mongocryptd ([b8d5307](https://github.com/mongodb-js/mongodb-client-encryption/commit/b8d530705155c6eb09351609c033d523d62c9b40))
+* build and test node on m1 NODE-3631 ([#245](https://github.com/mongodb-js/mongodb-client-encryption/issues/245)) ([fd5331d](https://github.com/mongodb-js/mongodb-client-encryption/commit/fd5331d6378f3fe38a3ba914e5ab794dd2e55d81))
+* implement crypto hooks, pass them into `MongoCrypt` instances ([976116b](https://github.com/mongodb-js/mongodb-client-encryption/commit/976116b8bd9c2c70a51e94b576ee34d8edcd29af))
+* **NODE-3177:** allow serverSelectionTimeoutMS to client ([#225](https://github.com/mongodb-js/mongodb-client-encryption/issues/225)) ([e049059](https://github.com/mongodb-js/mongodb-client-encryption/commit/e04905966203a59f53a28eac10649d83b973c465))
+* **NODE-3633:** add Socks5 support ([#220](https://github.com/mongodb-js/mongodb-client-encryption/issues/220)) ([5816a19](https://github.com/mongodb-js/mongodb-client-encryption/commit/5816a19175c47fe2d2c997fa59c693d98e4f992b))
+* **NODE-3777:** add node bindings for kms provider ([#221](https://github.com/mongodb-js/mongodb-client-encryption/issues/221)) ([0e3571f](https://github.com/mongodb-js/mongodb-client-encryption/commit/0e3571f3e80c8e0040ade719e2d1e22d8a40062c))
+* **NODE-3777:** set tls options per kms provider ([#235](https://github.com/mongodb-js/mongodb-client-encryption/issues/235)) ([bca4a84](https://github.com/mongodb-js/mongodb-client-encryption/commit/bca4a849aef4edf21b14c6147d30bf9e03ec1193))
+* **NODE-3781:** add tls options for kms providers ([#222](https://github.com/mongodb-js/mongodb-client-encryption/issues/222)) ([68adc88](https://github.com/mongodb-js/mongodb-client-encryption/commit/68adc88d69e02d6afdac0acaff54efaff2464303))
+* **NODE-3978:** allow identifying decrypted fields for internal usage/testing ([#266](https://github.com/mongodb-js/mongodb-client-encryption/issues/266)) ([6e6c6f5](https://github.com/mongodb-js/mongodb-client-encryption/commit/6e6c6f5f8328c190c7ee3f833f821b702b76b931))
+* **NODE-4085:** add Node.js csfle shared library option support ([#265](https://github.com/mongodb-js/mongodb-client-encryption/issues/265)) ([08d7f73](https://github.com/mongodb-js/mongodb-client-encryption/commit/08d7f73a5e0a45f6874899bdb42e630e897944b8))
+* **NODE-4136:** adjust Node.js bindings for shared library spec ([#306](https://github.com/mongodb-js/mongodb-client-encryption/issues/306)) ([7c1ce27](https://github.com/mongodb-js/mongodb-client-encryption/commit/7c1ce27213f1e9561966dd3d09ce030278b7426f))
+* **NODE-4218:** add aes256-ctr support ([#324](https://github.com/mongodb-js/mongodb-client-encryption/issues/324)) ([26471cc](https://github.com/mongodb-js/mongodb-client-encryption/commit/26471cc191fec6c5e16710855093f3342fe4842e))
+* **NODE-4220:** add FLE2 explicit encryption API ([#327](https://github.com/mongodb-js/mongodb-client-encryption/issues/327)) ([006f326](https://github.com/mongodb-js/mongodb-client-encryption/commit/006f326af4c48dfcc12ce07f2d292be45888ad7d))
+* **NODE-4234:** add aws credentials provider ([#479](https://github.com/mongodb-js/mongodb-client-encryption/issues/479)) ([f70a0cf](https://github.com/mongodb-js/mongodb-client-encryption/commit/f70a0cf7a54cbed335675314087aacffc981fc4c))
+* **NODE-4241:** add support for rewrapManyDataKey and keyMaterial ([#334](https://github.com/mongodb-js/mongodb-client-encryption/issues/334)) ([0e8749a](https://github.com/mongodb-js/mongodb-client-encryption/commit/0e8749a355f94404f9ea9bf45cdce320d45a26c4))
+* **NODE-4294:** mark queryable encryption options beta ([#380](https://github.com/mongodb-js/mongodb-client-encryption/issues/380)) ([006be71](https://github.com/mongodb-js/mongodb-client-encryption/commit/006be71c2a8517fddd5e8f409c8fda2e7a3115cc))
+* **NODE-4328:** expose libmongocrypt version in bindings ([#464](https://github.com/mongodb-js/mongodb-client-encryption/issues/464)) ([7dc561c](https://github.com/mongodb-js/mongodb-client-encryption/commit/7dc561cadb074d9babcffc290d2714136eac7bd1))
+* **NODE-4394:** add key management API to node bindings ([#414](https://github.com/mongodb-js/mongodb-client-encryption/issues/414)) ([aabd8eb](https://github.com/mongodb-js/mongodb-client-encryption/commit/aabd8eb7ed48aa0be7d7e637a62f217421ce2c6d))
+* **NODE-4517:** add official support for the key management API ([#439](https://github.com/mongodb-js/mongodb-client-encryption/issues/439)) ([6533b82](https://github.com/mongodb-js/mongodb-client-encryption/commit/6533b82bb1f674ea1107f7a3ed517be9c14cda3d))
+* **NODE-4619:** add KMS `accessToken` to TS definitions ([#459](https://github.com/mongodb-js/mongodb-client-encryption/issues/459)) ([15bd8d5](https://github.com/mongodb-js/mongodb-client-encryption/commit/15bd8d59c4b8b67f47859efc09cc5e7c41215967))
+* **NODE-4694:** support range indexes ([#533](https://github.com/mongodb-js/mongodb-client-encryption/issues/533)) ([3014b1c](https://github.com/mongodb-js/mongodb-client-encryption/commit/3014b1c1dfba4f3a4353701085aa23015dfce3d3))
+* **NODE-5013:** automatically create Queryable Encryption keys ([#552](https://github.com/mongodb-js/mongodb-client-encryption/issues/552)) ([72ae47d](https://github.com/mongodb-js/mongodb-client-encryption/commit/72ae47deab5f901ed09dc6900a4e4fc8601c7353))
+* **NODE-5049:** add support for kms gcp service accounts ([#574](https://github.com/mongodb-js/mongodb-client-encryption/issues/574)) ([a90a524](https://github.com/mongodb-js/mongodb-client-encryption/commit/a90a524123512c5bc665677dc9be181c68f7f6b1))
+* **NODE-5066:** add automatic credential usage to TS definitions ([#576](https://github.com/mongodb-js/mongodb-client-encryption/issues/576)) ([860f6a3](https://github.com/mongodb-js/mongodb-client-encryption/commit/860f6a308aa5d62669f67b1967a568d6942b8bc1))
+* **NODE-5074:** enable queryable encryption v2 ([#606](https://github.com/mongodb-js/mongodb-client-encryption/issues/606)) ([20b4117](https://github.com/mongodb-js/mongodb-client-encryption/commit/20b4117508c5681c6fc8a1e0db7f4fcb5a9788d0))
+* **NODE-5076:** add support for Azure KMS credential auto refresh ([#583](https://github.com/mongodb-js/mongodb-client-encryption/issues/583)) ([91bb63b](https://github.com/mongodb-js/mongodb-client-encryption/commit/91bb63b8e3fbe6b6ce10c3743d20016e50611173))
+* **NODE-5417:** bump minimum Node.js version to v16.20.1 ([#670](https://github.com/mongodb-js/mongodb-client-encryption/issues/670)) ([57531ba](https://github.com/mongodb-js/mongodb-client-encryption/commit/57531ba0f3c047724a2c7ec1a41439bc74779461))
+* **NODE-5420:** remove JS bindings from libmongocrypt ([#667](https://github.com/mongodb-js/mongodb-client-encryption/issues/667)) ([593ff24](https://github.com/mongodb-js/mongodb-client-encryption/commit/593ff2443140a00ed4683a53d2135b9a68956a91))
+* **NODE-5431:** add node bindings v6 deprecations ([#666](https://github.com/mongodb-js/mongodb-client-encryption/issues/666)) ([342e908](https://github.com/mongodb-js/mongodb-client-encryption/commit/342e90869d78236610560250e9ed22c8b5c15165))
+* support `bypassAutoEncryption` directly in AutoEncrypter ([fa5c6e7](https://github.com/mongodb-js/mongodb-client-encryption/commit/fa5c6e7ff9d99a057d43f2ead9d916883c10b35d))
+* support Azure and GCP KMS providers ([#139](https://github.com/mongodb-js/mongodb-client-encryption/issues/139)) ([826a3d9](https://github.com/mongodb-js/mongodb-client-encryption/commit/826a3d99ba56b2f124ab065d13736df0c6359720))
+* support passing crypto callbacks to `MongoCrypt` constructor ([cf5ccf6](https://github.com/mongodb-js/mongodb-client-encryption/commit/cf5ccf6cef46962bcd5b22b23a97aa81a85cdcc4))
+
+
+### Bug Fixes
+
+* add missing import in Node.js bindings TS definitions ([#353](https://github.com/mongodb-js/mongodb-client-encryption/issues/353)) ([50fba9e](https://github.com/mongodb-js/mongodb-client-encryption/commit/50fba9ec133fd36b4e3a5ecff0d622bc2c420fd4))
+* always authorize TLS endpoints, use servername for SNI ([#159](https://github.com/mongodb-js/mongodb-client-encryption/issues/159)) ([c571e46](https://github.com/mongodb-js/mongodb-client-encryption/commit/c571e466cd84654b56494dd410870ae6cbc74533))
+* clean up memory leaks related to mongocrypt_binary_t ([#166](https://github.com/mongodb-js/mongodb-client-encryption/issues/166)) ([e923c17](https://github.com/mongodb-js/mongodb-client-encryption/commit/e923c1784976291e057ebbdd884ccda77b586206))
+* copy output buffers to libmongocrypt in Node.js bindings ([#149](https://github.com/mongodb-js/mongodb-client-encryption/issues/149)) ([6949cdd](https://github.com/mongodb-js/mongodb-client-encryption/commit/6949cdd4d42d131e39178d56cbb585a3e0fa8fc5))
+* correct typo preventing passing a custom mongocrypt spawn path ([7c07e2f](https://github.com/mongodb-js/mongodb-client-encryption/commit/7c07e2f58d7954bd7df0fe71b939a763f1fcf06b))
+* ensure cflags are not mixed between windows and linux ([1aea82b](https://github.com/mongodb-js/mongodb-client-encryption/commit/1aea82b8c15c728adef94245a97b419092d30b94))
+* loosen peerDependencies requirement on mongodb ([#161](https://github.com/mongodb-js/mongodb-client-encryption/issues/161)) ([7454f03](https://github.com/mongodb-js/mongodb-client-encryption/commit/7454f031455f79b6eb0b9e9ca9640bdf1a95174f))
+* **NODE-2995:** add metadata client usage ([#168](https://github.com/mongodb-js/mongodb-client-encryption/issues/168)) ([8e6092b](https://github.com/mongodb-js/mongodb-client-encryption/commit/8e6092b5c04ab12a9d2f4fa7c2f8fb1de6cdf09c))
+* **NODE-3118:** keyAltNames option not serialized ([#176](https://github.com/mongodb-js/mongodb-client-encryption/issues/176)) ([c3aa733](https://github.com/mongodb-js/mongodb-client-encryption/commit/c3aa733f9a85d3e17923889b660ee79a9246ccce))
+* **NODE-3320:** Explicitly provide list of artifacts to be published with package.files ([#174](https://github.com/mongodb-js/mongodb-client-encryption/issues/174)) ([7ad0c9a](https://github.com/mongodb-js/mongodb-client-encryption/commit/7ad0c9aabb8d9d99e0b46a4e33c01e87476f404b))
+* **NODE-3326:** binding.gyp missing from files list in package.json ([#175](https://github.com/mongodb-js/mongodb-client-encryption/issues/175)) ([ba102c0](https://github.com/mongodb-js/mongodb-client-encryption/commit/ba102c0cc6faac18006c2897703e94551c360110))
+* **NODE-3350:** do not export Init and helper function symbols ([#177](https://github.com/mongodb-js/mongodb-client-encryption/issues/177)) ([e75d2ed](https://github.com/mongodb-js/mongodb-client-encryption/commit/e75d2ed60c743ce573b88d49b9b6c175aeb110c4))
+* **NODE-3605:** bypassAutoEncryption should not spawn mongocryptd ([#204](https://github.com/mongodb-js/mongodb-client-encryption/issues/204)) ([3886dca](https://github.com/mongodb-js/mongodb-client-encryption/commit/3886dca76e4f395fe3c15be37a839541381198f4))
+* **NODE-3633:** properly forward proxyOptions to StateMachine ([#230](https://github.com/mongodb-js/mongodb-client-encryption/issues/230)) ([afa1838](https://github.com/mongodb-js/mongodb-client-encryption/commit/afa183872c00bb6dc5f0df1906fde47baf7c383f))
+* **NODE-3777:** destroy socket on end ([#236](https://github.com/mongodb-js/mongodb-client-encryption/issues/236)) ([b886970](https://github.com/mongodb-js/mongodb-client-encryption/commit/b8869705f55665d7e23847d984e4d0200164ec9a))
+* **NODE-4242:** do not run mongocryptd if bypassQueryAnalysis ([#335](https://github.com/mongodb-js/mongodb-client-encryption/issues/335)) ([2e8903f](https://github.com/mongodb-js/mongodb-client-encryption/commit/2e8903ff06066f96331bcb20fa46af5580fdc945))
+* **NODE-4251:** fix markCommand deserialization ([#364](https://github.com/mongodb-js/mongodb-client-encryption/issues/364)) ([30de861](https://github.com/mongodb-js/mongodb-client-encryption/commit/30de8614533e7aa96b312f8726e413c2781e4b6e))
+* **NODE-4254:** allow csfle to be dynamically required ([#342](https://github.com/mongodb-js/mongodb-client-encryption/issues/342)) ([8105956](https://github.com/mongodb-js/mongodb-client-encryption/commit/810595621f5c443c8e21f42275a9d3180deb80c9))
+* **NODE-4260:** mongocrypterror has name getter ([#383](https://github.com/mongodb-js/mongodb-client-encryption/issues/383)) ([1b1b699](https://github.com/mongodb-js/mongodb-client-encryption/commit/1b1b69926cb94771f542f5e5e869823a25932b86))
+* **NODE-4279:** handle decrypted nested documents well with devtools decoration ([#350](https://github.com/mongodb-js/mongodb-client-encryption/issues/350)) ([f2c401b](https://github.com/mongodb-js/mongodb-client-encryption/commit/f2c401bcfd6c02cf2c2bed92395a63e3ac733540))
+* **NODE-4339:** remove indexKeyId ([#387](https://github.com/mongodb-js/mongodb-client-encryption/issues/387)) ([a56a784](https://github.com/mongodb-js/mongodb-client-encryption/commit/a56a78468ceec419281393da367f32e7dd65b70e))
+* **NODE-4342:** remove createKey() in favor of createDataKey() ([#390](https://github.com/mongodb-js/mongodb-client-encryption/issues/390)) ([21ef15d](https://github.com/mongodb-js/mongodb-client-encryption/commit/21ef15da9580d925caf1105ec13654ef9e0c6006))
+* **NODE-4356:** update rewrapManyDataKey to use UpdateOne bulk ops ([#389](https://github.com/mongodb-js/mongodb-client-encryption/issues/389)) ([7d13004](https://github.com/mongodb-js/mongodb-client-encryption/commit/7d13004575a8368937f3c60ac2ea5ed0efeae92d))
+* **NODE-4556:** attempt to use exported BSON ([#443](https://github.com/mongodb-js/mongodb-client-encryption/issues/443)) ([91b2bc4](https://github.com/mongodb-js/mongodb-client-encryption/commit/91b2bc43c8fd14da4e38a512b8e87f10e3a2dba8))
+* **NODE-4880:** specify family of ipv4 when connecting to default mongocryptd uri ([#516](https://github.com/mongodb-js/mongodb-client-encryption/issues/516)) ([3c4aa8b](https://github.com/mongodb-js/mongodb-client-encryption/commit/3c4aa8bbcfe9a886d67a7019d2f41fca78ee526e))
+* **NODE-4896:** do not pass explicit session into state machine helpers ([#632](https://github.com/mongodb-js/mongodb-client-encryption/issues/632)) ([afb6dc7](https://github.com/mongodb-js/mongodb-client-encryption/commit/afb6dc737b8d120641da8fc2925ccf5c06f9ba33))
+* **NODE-4987:** node csfle uses promises instead of callbacks ([#537](https://github.com/mongodb-js/mongodb-client-encryption/issues/537)) ([031bbfa](https://github.com/mongodb-js/mongodb-client-encryption/commit/031bbfa313f754681a440779231b195211b07e3e))
+* **NODE-4997:** no strncasecmp on windows ([#545](https://github.com/mongodb-js/mongodb-client-encryption/issues/545)) ([c117879](https://github.com/mongodb-js/mongodb-client-encryption/commit/c11787992cf3877f9db65fcba69499812966a83a))
+* **NODE-5000:** make aws credential providers peer optional ([#546](https://github.com/mongodb-js/mongodb-client-encryption/issues/546)) ([04e06f3](https://github.com/mongodb-js/mongodb-client-encryption/commit/04e06f35c63f9d6f0fc96a9de82287950fb595f7))
+* **NODE-5023:** use correct options type for encryptExpression ([#555](https://github.com/mongodb-js/mongodb-client-encryption/issues/555)) ([9a2ad11](https://github.com/mongodb-js/mongodb-client-encryption/commit/9a2ad115436178de3b92fe103b9512cc910ecb7a))
+* **NODE-5041:** replace `rangeOpts` with `rangeOptions` in Typescript definitions ([#557](https://github.com/mongodb-js/mongodb-client-encryption/issues/557)) ([e748da9](https://github.com/mongodb-js/mongodb-client-encryption/commit/e748da9153e172e30c2663645b0a777ae24cf510))
+* **NODE-5053:** enforce empty map for kmsProvider auto credentials ([#565](https://github.com/mongodb-js/mongodb-client-encryption/issues/565)) ([43e98b7](https://github.com/mongodb-js/mongodb-client-encryption/commit/43e98b7be040b5589df69a0854062191d75ad66e))
+* **NODE-5172:** direct link to python 3.9 for prebuild ([#609](https://github.com/mongodb-js/mongodb-client-encryption/issues/609)) ([84f252e](https://github.com/mongodb-js/mongodb-client-encryption/commit/84f252e8d6561f472a1cc22e43edba180a1aac3b))
+* **NODE-5172:** update node-gyp ([#608](https://github.com/mongodb-js/mongodb-client-encryption/issues/608)) ([c90645a](https://github.com/mongodb-js/mongodb-client-encryption/commit/c90645a78590ada852457a14bcc342930161ac0d))
+* **NODE-5516:** allow `undefined` values for optional Uint8Arrays arguments ([#683](https://github.com/mongodb-js/mongodb-client-encryption/issues/683)) ([f058acd](https://github.com/mongodb-js/mongodb-client-encryption/commit/f058acdc94419c9f8bbc7a17a545066d5ee07295))
+* **NODE-6109:** allow building from source on latest Node.js 20.x ([#788](https://github.com/mongodb-js/mongodb-client-encryption/issues/788)) ([7148252](https://github.com/mongodb-js/mongodb-client-encryption/commit/71482527576c72ce498e91b404e99faa82f5bf52))
+* **NODE-6173:** add rangeV2 feature flag toggle to Node.js bindings ([#6](https://github.com/mongodb-js/mongodb-client-encryption/issues/6)) ([e35bd59](https://github.com/mongodb-js/mongodb-client-encryption/commit/e35bd59f40668749853256d6a91ccdeede7d0c25))
+* support two ways of specifying `--idleShutdownTimeoutSecs` ([3e4f575](https://github.com/mongodb-js/mongodb-client-encryption/commit/3e4f5757faa353e11ec8415495c938b93fba158b))
+
+
+### Miscellaneous Chores
+
+* **NODE-3849:** update dependencies and sync tooling ([#241](https://github.com/mongodb-js/mongodb-client-encryption/issues/241)) ([08b5adf](https://github.com/mongodb-js/mongodb-client-encryption/commit/08b5adfa1128241eb2e0e74c87be953ba490f3cb))
+
 ## [6.0.0](https://github.com/mongodb-js/mongodb-client-encryption/compare/v6.0.0-alpha.3...v6.0.0) (2023-08-28)
 
 * 86bd61e docs: Update Node bindings README.md
