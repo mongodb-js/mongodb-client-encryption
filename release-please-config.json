@@ -1,4 +1,5 @@
 {
+  "pull-request-header": "Please run the release_notes action before releasing to generate release highlights",
   "packages": {
     ".": {
       "changelog-path": "HISTORY.md",
