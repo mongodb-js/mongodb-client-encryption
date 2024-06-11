@@ -40,8 +40,6 @@ export interface MongoCryptConstructor {
     cryptSharedLibSearchPaths?: string[];
     cryptSharedLibPath?: string;
     bypassQueryAnalysis?: boolean;
-    /** @experimental */
-    rangeV2?: boolean;
   }): MongoCrypt;
   libmongocryptVersion: string;
 }
