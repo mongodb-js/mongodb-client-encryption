@@ -26,8 +26,6 @@ jobs:
       shell: bash
       run: |
         npm run install:libmongocrypt
-        npm install
-        npm run prebuild
         
     - if: matrix.lint-target == 'c++'
       shell: bash
