@@ -25,7 +25,7 @@ jobs:
     - name: "Build libmongocrypt"
       shell: bash
       run: |
-        node .github/scripts/libmongocrypt.mjs
+        npm run install:libmongocrypt
         npm install
         npm run prebuild
         
