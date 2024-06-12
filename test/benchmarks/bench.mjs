@@ -1,5 +1,6 @@
 // @ts-check
 /* eslint-disable no-console */
+import os from 'node:os';
 import path from 'node:path';
 import url from 'node:url';
 import process from 'node:process';
@@ -98,6 +99,21 @@ function measureMedianOpsPerSecOfDecrypt(mongoCrypt, toDecrypt, seconds) {
 }
 
 function main() {
+  const hw = os.cpus();
+  const ram = os.totalmem() / 1024 ** 3;
+  const platform = { name: hw[0].model, cores: hw.length, ram: `${ram}GB` };
+
+  const systemInfo = () =>
+    [
+      `\n- cpu: ${platform.name}`,
+      `- node: ${process.version}`,
+      `- cores: ${platform.cores}`,
+      `- arch: ${os.arch()}`,
+      `- os: ${process.platform} (${os.release()})`,
+      `- ram: ${platform.ram}\n`
+    ].join('\n');
+  console.log(systemInfo());
+
   console.log(
     `BenchmarkRunner is using ` +
       `libmongocryptVersion=${MongoCrypt.libmongocryptVersion}, ` +
