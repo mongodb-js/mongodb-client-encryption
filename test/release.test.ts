@@ -24,8 +24,14 @@ const REQUIRED_FILES = [
 describe(`Release ${packFile}`, function () {
   this.timeout(10000);
 
+  beforeEach(function () {
+    if (process.arch !== 'x64') {
+      this.skip();
+    }
+  });
+
   let tarFileList;
-  before(() => {
+  beforeEach(() => {
     expect(fs.existsSync(packFile)).to.equal(false);
     cp.execSync('npm pack', { stdio: 'ignore' });
     tarFileList = [];
@@ -38,8 +44,10 @@ describe(`Release ${packFile}`, function () {
     });
   });
 
-  after(() => {
-    fs.unlinkSync(packFile);
+  afterEach(() => {
+    if (process.arch === 'x64') {
+      fs.unlinkSync(packFile);
+    }
   });
 
   for (const requiredFile of REQUIRED_FILES) {

@@ -4,7 +4,8 @@ FROM $NODE_BUILD_IMAGE AS build
 WORKDIR /mongodb-client-encryption
 COPY . .
 
-RUN node /mongodb-client-encryption/.github/scripts/libmongocrypt.mjs
+RUN npm run install:libmongocrypt
+RUN npm run test
 
 FROM scratch
 
