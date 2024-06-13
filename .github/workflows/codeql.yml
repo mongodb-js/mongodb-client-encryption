@@ -46,7 +46,7 @@ jobs:
 
     - if: matrix.build-mode == 'manual'
       shell: bash
-      run: node .github/scripts/libmongocrypt.mjs
+      run: npm run install:libmongocrypt
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v3

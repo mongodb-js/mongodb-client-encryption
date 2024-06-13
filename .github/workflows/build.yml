@@ -22,7 +22,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Build ${{ matrix.os }} Prebuild
-        run: node .github/scripts/libmongocrypt.mjs ${{ runner.os == 'Windows' && '--build' || '' }}
+        run: npm run install:libmongocrypt ${{ runner.os == 'Windows' && '-- --build' || '' }}
         shell: bash
 
       - name: Test ${{ matrix.os }}

@@ -1,3 +1,4 @@
+// @ts-check
 import util from 'node:util';
 import process from 'node:process';
 import fs from 'node:fs/promises';
@@ -23,7 +24,7 @@ async function parseArguments() {
     libVersion: { short: 'l', type: 'string', default: pkg['mongodb:libmongocrypt'] },
     clean: { short: 'c', type: 'boolean', default: false },
     build: { short: 'b', type: 'boolean', default: false },
-    crypto: { type: 'boolean', default: false }, // Use Node.js builtin crypto
+    'no-crypto': { type: 'boolean', default: false }, // Use Node.js builtin crypto
     fastDownload: { type: 'boolean', default: false }, // Potentially incorrect download, only for the brave and impatient
     help: { short: 'h', type: 'boolean', default: false }
   };
@@ -41,11 +42,9 @@ async function parseArguments() {
   }
 
   return {
-    libmongocrypt: {
-      url: args.values.gitURL,
-      ref: args.values.libVersion,
-      crypto: args.values.crypto
-    },
+    url: args.values.gitURL,
+    ref: args.values.libVersion,
+    crypto: !args.values['no-crypto'],
     fastDownload: args.values.fastDownload,
     clean: args.values.clean,
     build: args.values.build,
@@ -143,7 +142,7 @@ export async function buildLibMongoCrypt(libmongocryptRoot, nodeDepsRoot, option
   });
 }
 
-export async function downloadLibMongoCrypt(nodeDepsRoot, { ref, crypto }, fastDownload) {
+export async function downloadLibMongoCrypt(nodeDepsRoot, { ref, crypto, fastDownload }) {
   const downloadURL =
     ref === 'latest'
       ? 'https://mciuploads.s3.amazonaws.com/libmongocrypt/all/master/latest/libmongocrypt-all.tar.gz'
@@ -231,11 +230,12 @@ export async function downloadLibMongoCrypt(nodeDepsRoot, { ref, crypto }, fastD
 }
 
 async function main() {
-  const { libmongocrypt, build, clean, pkg } = await parseArguments();
+  const args = await parseArguments();
+  console.log(args);
 
   const nodeDepsDir = resolveRoot('deps');
 
-  if (build) {
+  if (args.build) {
     const libmongocryptCloneDir = resolveRoot('_libmongocrypt');
 
     const currentLibMongoCryptBranch = await fs
@@ -243,23 +243,23 @@ async function main() {
       .catch(() => '');
     const isClonedAndCheckedOut = currentLibMongoCryptBranch
       .trim()
-      .endsWith(`r-${libmongocrypt.ref}`);
+      .endsWith(`r-${args.ref}`);
 
-    if (clean || !isClonedAndCheckedOut) {
-      await cloneLibMongoCrypt(libmongocryptCloneDir, libmongocrypt);
+    if (args.clean || !isClonedAndCheckedOut) {
+      await cloneLibMongoCrypt(libmongocryptCloneDir, args);
     }
 
     const libmongocryptBuiltVersion = await fs
       .readFile(path.join(libmongocryptCloneDir, 'VERSION_CURRENT'), 'utf8')
       .catch(() => '');
-    const isBuilt = libmongocryptBuiltVersion.trim() === libmongocrypt.ref;
+    const isBuilt = libmongocryptBuiltVersion.trim() === args.ref;
 
-    if (clean || !isBuilt) {
-      await buildLibMongoCrypt(libmongocryptCloneDir, nodeDepsDir, libmongocrypt);
+    if (args.clean || !isBuilt) {
+      await buildLibMongoCrypt(libmongocryptCloneDir, nodeDepsDir, args);
     }
   } else {
     // Download
-    await downloadLibMongoCrypt(nodeDepsDir, libmongocrypt, fastDownload);
+    await downloadLibMongoCrypt(nodeDepsDir, args);
   }
 
   await fs.rm(resolveRoot('build'), { force: true, recursive: true });
@@ -274,8 +274,8 @@ async function main() {
   if (process.platform === 'darwin') {
     // The "arm64" build is actually a universal binary
     await fs.copyFile(
-      resolveRoot('prebuilds', `mongodb-client-encryption-v${pkg.version}-napi-v4-darwin-arm64.tar.gz`),
-      resolveRoot('prebuilds', `mongodb-client-encryption-v${pkg.version}-napi-v4-darwin-x64.tar.gz`)
+      resolveRoot('prebuilds', `mongodb-client-encryption-v${args.pkg.version}-napi-v4-darwin-arm64.tar.gz`),
+      resolveRoot('prebuilds', `mongodb-client-encryption-v${args.pkg.version}-napi-v4-darwin-x64.tar.gz`)
     );
   }
 }
