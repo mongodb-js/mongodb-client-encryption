@@ -185,8 +185,8 @@ static bool aes_256_generic_hook(MongoCrypt* mongoCrypt,
 
     Value result;
     try {
-        result =
-            hook.Call(std::initializer_list<napi_value>{keyBuffer, ivBuffer, inBuffer, outputBuffer});
+        result = hook.Call(
+            std::initializer_list<napi_value>{keyBuffer, ivBuffer, inBuffer, outputBuffer});
     } catch (...) {
         return false;
     }
