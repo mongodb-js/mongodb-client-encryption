@@ -15,7 +15,8 @@ const ERROR = 0;
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 
-const { CRYPT_SHARED_LIB_PATH: cryptSharedLibPath = '' } = process.env;
+const { CRYPT_SHARED_LIB_PATH: cryptSharedLibPath = '', BENCH_WITH_NATIVE_CRYPTO = '' } =
+  process.env;
 
 const warmupSecs = 2;
 const testInSecs = 57;
@@ -57,9 +58,9 @@ function createEncryptedDocument(mongoCrypt) {
       ctx.finishMongoOperation();
     }
 
-    console.assert(ctx.state === READY);
+    if (ctx.state !== READY) throw new Error(`not ready: [${ctx.state}] ${ctx.status.message}`);
     const result = ctx.finalize();
-    console.assert(ctx.state !== ERROR);
+    if (ctx.state === ERROR) throw new Error(`error: [${ctx.state}] ${ctx.status.message}`);
     const { v: encryptedValue } = BSON.deserialize(result);
     encrypted[key] = encryptedValue;
   }
@@ -120,7 +121,8 @@ function main() {
       `testInSecs=${testInSecs}`
   );
 
-  const mongoCryptOptions = { kmsProviders: BSON.serialize(kmsProviders), cryptoCallbacks };
+  const mongoCryptOptions = { kmsProviders: BSON.serialize(kmsProviders) };
+  if (!BENCH_WITH_NATIVE_CRYPTO) mongoCryptOptions.cryptoCallbacks = cryptoCallbacks;
   if (cryptSharedLibPath) mongoCryptOptions.cryptSharedLibPath = cryptSharedLibPath;
 
   const mongoCrypt = new MongoCrypt(mongoCryptOptions);
