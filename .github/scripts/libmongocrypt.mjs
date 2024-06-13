@@ -23,6 +23,8 @@ async function parseArguments() {
     libVersion: { short: 'l', type: 'string', default: pkg['mongodb:libmongocrypt'] },
     clean: { short: 'c', type: 'boolean', default: false },
     build: { short: 'b', type: 'boolean', default: false },
+    crypto: { type: 'boolean', default: false }, // Use Node.js builtin crypto
+    fastDownload: { type: 'boolean', default: false }, // Potentially incorrect download, only for the brave and impatient
     help: { short: 'h', type: 'boolean', default: false }
   };
 
@@ -39,7 +41,12 @@ async function parseArguments() {
   }
 
   return {
-    libmongocrypt: { url: args.values.gitURL, ref: args.values.libVersion },
+    libmongocrypt: {
+      url: args.values.gitURL,
+      ref: args.values.libVersion,
+      crypto: args.values.crypto
+    },
+    fastDownload: args.values.fastDownload,
     clean: args.values.clean,
     build: args.values.build,
     pkg
@@ -77,7 +84,7 @@ export async function cloneLibMongoCrypt(libmongocryptRoot, { url, ref }) {
   }
 }
 
-export async function buildLibMongoCrypt(libmongocryptRoot, nodeDepsRoot) {
+export async function buildLibMongoCrypt(libmongocryptRoot, nodeDepsRoot, options) {
   console.error('building libmongocrypt...');
 
   const nodeBuildRoot = resolveRoot(nodeDepsRoot, 'tmp', 'libmongocrypt-build');
@@ -88,7 +95,6 @@ export async function buildLibMongoCrypt(libmongocryptRoot, nodeDepsRoot) {
   const CMAKE_FLAGS = toFlags({
     /**
      * We provide crypto hooks from Node.js binding to openssl (so disable system crypto)
-     * TODO: NODE-5455
      *
      * One thing that is not obvious from the build instructions for libmongocrypt
      * and the Node.js bindings is that the Node.js driver uses libmongocrypt in
@@ -101,7 +107,7 @@ export async function buildLibMongoCrypt(libmongocryptRoot, nodeDepsRoot) {
      * have a copy of OpenSSL available directly, but for now it seems to make sense
      * to stick with what the Node.js addon does here.
      */
-    DDISABLE_NATIVE_CRYPTO: '1',
+    DDISABLE_NATIVE_CRYPTO: options.crypto ? '0' : '1',
     /** A consistent name for the output "library" directory */
     DCMAKE_INSTALL_LIBDIR: 'lib',
     /** No warnings allowed */
@@ -128,15 +134,26 @@ export async function buildLibMongoCrypt(libmongocryptRoot, nodeDepsRoot) {
 
   await run(
     'cmake',
-    [...CMAKE_FLAGS, ...WINDOWS_CMAKE_FLAGS, ...MACOS_CMAKE_FLAGS, libmongocryptRoot],
+    [
+      '--parallel',
+      '4',
+      ...CMAKE_FLAGS,
+      ...WINDOWS_CMAKE_FLAGS,
+      ...MACOS_CMAKE_FLAGS,
+      libmongocryptRoot
+    ],
     { cwd: nodeBuildRoot }
   );
-  await run('cmake', ['--build', '.', '--target', 'install', '--config', 'RelWithDebInfo'], {
-    cwd: nodeBuildRoot
-  });
+  await run(
+    'cmake',
+    ['--parallel', '4', '--build', '.', '--target', 'install', '--config', 'RelWithDebInfo'],
+    {
+      cwd: nodeBuildRoot
+    }
+  );
 }
 
-export async function downloadLibMongoCrypt(nodeDepsRoot, { ref }) {
+export async function downloadLibMongoCrypt(nodeDepsRoot, { ref, crypto }, fastDownload) {
   const downloadURL =
     ref === 'latest'
       ? 'https://mciuploads.s3.amazonaws.com/libmongocrypt/all/master/latest/libmongocrypt-all.tar.gz'
@@ -164,28 +181,62 @@ export async function downloadLibMongoCrypt(nodeDepsRoot, { ref }) {
 
   console.error(`Platform: ${detectedPlatform} Prebuild: ${prebuild}`);
 
-  const unzipArgs = ['-xzv', '-C', `_libmongocrypt-${ref}`, `${prebuild}/nocrypto`];
+  const downloadDestination = crypto ? `${prebuild}` : `${prebuild}/nocrypto`;
+  const unzipArgs = ['-xzv', '-C', `_libmongocrypt-${ref}`, downloadDestination];
   console.error(`+ tar ${unzipArgs.join(' ')}`);
   const unzip = child_process.spawn('tar', unzipArgs, {
-    stdio: ['pipe', 'inherit'],
+    stdio: ['pipe', 'inherit', 'pipe'],
     cwd: resolveRoot('.')
   });
 
   const [response] = await events.once(https.get(downloadURL), 'response');
 
   const start = performance.now();
-  await stream.pipeline(response, unzip.stdin);
+
+  let signal;
+  if (fastDownload) {
+    /**
+     * Tar will print out each file it finds inside MEMBER (ex. macos/nocrypto)
+     * For each file it prints, we give it a deadline of 10seconds to print the next one.
+     * If nothing prints after 10 seconds we exit early.
+     * This depends on the tar file being in order and un-tar-able in under 10sec.
+     *
+     * download time went from 230s to 80s
+     */
+    const controller = new AbortController();
+    signal = controller.signal;
+    let isFirstStdoutDataEv = true;
+    let timeout;
+    unzip.stderr.on('data', chunk => {
+      process.stderr.write(chunk, () => {
+        if (isFirstStdoutDataEv) {
+          isFirstStdoutDataEv = false;
+          timeout = setTimeout(() => controller.abort(), 10_000);
+        }
+        timeout?.refresh();
+      });
+    });
+  }
+
+  try {
+    await stream.pipeline(response, unzip.stdin, { signal });
+  } catch {
+    await fs.access(path.join(`_libmongocrypt-${ref}`, downloadDestination));
+  }
   const end = performance.now();
 
   console.error(`downloaded libmongocrypt in ${(end - start) / 1000} secs...`);
 
   await fs.rm(nodeDepsRoot, { recursive: true, force: true });
-  await fs.cp(resolveRoot(destination, prebuild, 'nocrypto'), nodeDepsRoot, { recursive: true });
-  const currentPath = path.join(nodeDepsRoot, 'lib64');
+  const source = crypto
+    ? resolveRoot(destination, prebuild)
+    : resolveRoot(destination, prebuild, 'nocrypto');
+  await fs.cp(source, nodeDepsRoot, { recursive: true });
+  const potentialLib64Path = path.join(nodeDepsRoot, 'lib64');
   try {
-    await fs.rename(currentPath, path.join(nodeDepsRoot, 'lib'));
+    await fs.rename(potentialLib64Path, path.join(nodeDepsRoot, 'lib'));
   } catch (error) {
-    console.error(`error renaming ${currentPath}: ${error.message}`);
+    await fs.access(path.join(nodeDepsRoot, 'lib')); // Ensure there is a "lib" directory
   }
 }
 
@@ -214,11 +265,13 @@ async function main() {
     const isBuilt = libmongocryptBuiltVersion.trim() === libmongocrypt.ref;
 
     if (clean || !isBuilt) {
-      await buildLibMongoCrypt(libmongocryptCloneDir, nodeDepsDir);
+      await buildLibMongoCrypt(libmongocryptCloneDir, nodeDepsDir, {
+        crypto: libmongocrypt.crypto
+      });
     }
   } else {
     // Download
-    await downloadLibMongoCrypt(nodeDepsDir, libmongocrypt);
+    await downloadLibMongoCrypt(nodeDepsDir, libmongocrypt, fastDownload);
   }
 
   await fs.rm(resolveRoot('build'), { force: true, recursive: true });
