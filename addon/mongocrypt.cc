@@ -472,7 +472,7 @@ MongoCrypt::MongoCrypt(const CallbackInfo& info)
         }
     }
 
-    if (options.Has("cryptoCallbacks")) {
+    if (!mongocrypt_is_crypto_available() && options.Has("cryptoCallbacks")) {
         Object cryptoCallbacks = options.Get("cryptoCallbacks").ToObject();
 
         SetCallback("aes256CbcEncryptHook", cryptoCallbacks["aes256CbcEncryptHook"]);
