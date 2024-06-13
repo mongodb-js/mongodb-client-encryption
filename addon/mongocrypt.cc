@@ -45,14 +45,11 @@ std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> Uint8ArrayToBinary
 }
 
 Uint8Array BufferFromBinary(Env env, mongocrypt_binary_t* binary) {
-    const uint8_t* data = mongocrypt_binary_data(binary);
-    size_t len = mongocrypt_binary_len(binary);
-    return Buffer<uint8_t>::Copy(env, data, len);
+    return Buffer<uint8_t>::Copy(env, (uint8_t*)binary->data, binary->len);
 }
 
 Uint8Array BufferWithLengthOf(Env env, mongocrypt_binary_t* binary) {
-    size_t len = mongocrypt_binary_len(binary);
-    return Buffer<uint8_t>::New(env, len);
+    return Buffer<uint8_t>::New(env, binary->len);
 }
 
 Uint8Array Uint8ArrayFromValue(Napi::Value v, std::string argument_name) {
@@ -64,13 +61,13 @@ Uint8Array Uint8ArrayFromValue(Napi::Value v, std::string argument_name) {
 }
 
 void CopyBufferData(mongocrypt_binary_t* out, Uint8Array buffer, size_t count) {
-    assert(count <= mongocrypt_binary_len(out));
+    assert(count <= out->len);
     assert(count <= buffer.ByteLength());
-    memcpy(mongocrypt_binary_data(out), buffer.Data(), count);
+    memcpy(out->data, buffer.Data(), count);
 }
 
 void CopyBufferData(mongocrypt_binary_t* out, Uint8Array buffer) {
-    CopyBufferData(out, buffer, mongocrypt_binary_len(out));
+    CopyBufferData(out, buffer, out->len);
 }
 
 std::string errorStringFromStatus(mongocrypt_t* crypt) {
@@ -184,12 +181,12 @@ static bool aes_256_generic_hook(MongoCrypt* mongoCrypt,
     Uint8Array keyBuffer = BufferFromBinary(env, key);
     Uint8Array ivBuffer = BufferFromBinary(env, iv);
     Uint8Array inBuffer = BufferFromBinary(env, in);
-    Uint8Array outBuffer = BufferWithLengthOf(env, out);
+    Uint8Array outputBuffer = BufferWithLengthOf(env, out);
 
     Value result;
     try {
         result =
-            hook.Call(std::initializer_list<napi_value>{keyBuffer, ivBuffer, inBuffer, outBuffer});
+            hook.Call(std::initializer_list<napi_value>{keyBuffer, ivBuffer, inBuffer, outputBuffer});
     } catch (...) {
         return false;
     }
@@ -200,7 +197,7 @@ static bool aes_256_generic_hook(MongoCrypt* mongoCrypt,
     }
 
     *bytes_written = result.ToNumber().Uint32Value();
-    CopyBufferData(out, outBuffer, *bytes_written);
+    CopyBufferData(out, outputBuffer, *bytes_written);
     return true;
 }
 
@@ -262,11 +259,11 @@ bool MongoCrypt::setupCryptoHooks() {
         HandleScope scope(env);
         Function hook = mongoCrypt->GetCallback("randomHook");
 
-        Uint8Array outBuffer = BufferWithLengthOf(env, out);
+        Uint8Array outputBuffer = BufferWithLengthOf(env, out);
         Napi::Value result;
         try {
             result =
-                hook.Call(std::initializer_list<napi_value>{outBuffer, Number::New(env, count)});
+                hook.Call(std::initializer_list<napi_value>{outputBuffer, Number::New(env, count)});
         } catch (...) {
             return false;
         }
@@ -276,7 +273,7 @@ bool MongoCrypt::setupCryptoHooks() {
             return false;
         }
 
-        CopyBufferData(out, outBuffer);
+        CopyBufferData(out, outputBuffer);
         return true;
     };
 

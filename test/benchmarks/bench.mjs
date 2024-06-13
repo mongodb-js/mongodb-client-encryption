@@ -15,8 +15,7 @@ const ERROR = 0;
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 
-let { CRYPT_SHARED_LIB_PATH = '' } = process.env;
-const cryptSharedLibPath = CRYPT_SHARED_LIB_PATH.length !== 0 ? CRYPT_SHARED_LIB_PATH : undefined;
+const { CRYPT_SHARED_LIB_PATH: cryptSharedLibPath = '' } = process.env;
 
 const warmupSecs = 2;
 const testInSecs = 57;
@@ -121,10 +120,7 @@ function main() {
       `testInSecs=${testInSecs}`
   );
 
-  const mongoCryptOptions = {
-    kmsProviders: BSON.serialize(kmsProviders),
-    cryptoCallbacks
-  };
+  const mongoCryptOptions = { kmsProviders: BSON.serialize(kmsProviders), cryptoCallbacks };
   if (cryptSharedLibPath) mongoCryptOptions.cryptSharedLibPath = cryptSharedLibPath;
 
   const mongoCrypt = new MongoCrypt(mongoCryptOptions);
