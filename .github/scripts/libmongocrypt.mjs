@@ -200,7 +200,7 @@ export async function downloadLibMongoCrypt(nodeDepsRoot, { ref, crypto, fastDow
       process.stderr.write(chunk, () => {
         if (isFirstStdoutDataEv) {
           isFirstStdoutDataEv = false;
-          timeout = setTimeout(() => controller.abort(), 10_000);
+          timeout = setTimeout(() => controller.abort(), 5_000);
         }
         timeout?.refresh();
       });
