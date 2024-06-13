@@ -64,8 +64,8 @@ runs:
       shell: bash
       run: ls -la artifacts/
 
-    # - name: "Upload release artifacts"
-    #   run: gh release upload v${{ steps.get_vars.outputs.package_version }} artifacts/*.*
-    #   shell: bash
-    #   env:
-    #     GH_TOKEN: ${{ github.token }}
+    - name: "Upload release artifacts"
+      run: gh release upload v${{ steps.get_vars.outputs.package_version }} artifacts/*.*
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
