@@ -514,9 +514,7 @@ MongoCrypt::MongoCrypt(const CallbackInfo& info)
         mongocrypt_setopt_bypass_query_analysis(_mongo_crypt.get());
     }
 
-    if (options.Get("rangeV2").ToBoolean()) {
-        mongocrypt_setopt_use_range_v2(_mongo_crypt.get());
-    }
+    mongocrypt_setopt_use_range_v2(_mongo_crypt.get());
 
     mongocrypt_setopt_use_need_kms_credentials_state(_mongo_crypt.get());
 
@@ -596,10 +594,10 @@ Value MongoCrypt::MakeExplicitEncryptionContext(const CallbackInfo& info) {
             throw TypeError::New(Env(), errorStringFromStatus(context.get()));
         }
 
-        if (strcasecmp(algorithm.c_str(), "rangepreview") == 0) {
+        if (strcasecmp(algorithm.c_str(), "range") == 0) {
             if (!options.Has("rangeOptions")) {
                 throw TypeError::New(
-                    Env(), "`rangeOptions` must be provided if `algorithm` is set to RangePreview");
+                    Env(), "`rangeOptions` must be provided if `algorithm` is set to Range");
             }
 
             Uint8Array rangeOptions = Uint8ArrayFromValue(options["rangeOptions"], "rangeOptions");

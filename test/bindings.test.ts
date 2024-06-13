@@ -341,17 +341,17 @@ describe('MongoCryptConstructor', () => {
       });
     });
 
-    context('when algorithm is `rangePreview', () => {
+    context('when algorithm is `Range', () => {
       it('throws a TypeError if rangeOptions is not provided', () => {
         expect(() =>
           mc.makeExplicitEncryptionContext(value, {
             // minimum required arguments from libmongocrypt
             keyId: keyId.buffer,
             expressionMode: false,
-            algorithm: 'rangePreview'
+            algorithm: 'Range'
           })
         )
-          .to.throw(/`rangeOptions` must be provided if `algorithm` is set to RangePreview/)
+          .to.throw(/`rangeOptions` must be provided if `algorithm` is set to Range/)
           .to.be.instanceOf(TypeError);
       });
 
@@ -361,7 +361,7 @@ describe('MongoCryptConstructor', () => {
             // minimum required arguments from libmongocrypt
             keyId: keyId.buffer,
             expressionMode: false,
-            algorithm: 'rangePreview',
+            algorithm: 'Range',
             rangeOptions: 'non-buffer'
           })
         )
@@ -369,18 +369,18 @@ describe('MongoCryptConstructor', () => {
           .to.be.instanceOf(TypeError);
       });
 
-      it('checks if `rangePreview` is set case-insensitive', () => {
+      it('checks if `Range` is set case-insensitive', () => {
         expect(
           mc.makeExplicitEncryptionContext(value, {
             // minimum required arguments from libmongocrypt
             keyId: keyId.buffer,
             expressionMode: false,
-            algorithm: 'RANGEPREVIEW',
+            algorithm: 'RANGE',
             rangeOptions: serialize({
               sparsity: new Long(42)
             }),
 
-            // contention factor is required for `rangePreview` but
+            // contention factor is required for `Range` but
             // is enforced in libmongocrypt, not our bindings
             contentionFactor: 2
           })
