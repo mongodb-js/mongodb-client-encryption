@@ -134,23 +134,13 @@ export async function buildLibMongoCrypt(libmongocryptRoot, nodeDepsRoot, option
 
   await run(
     'cmake',
-    [
-      '--parallel',
-      '4',
-      ...CMAKE_FLAGS,
-      ...WINDOWS_CMAKE_FLAGS,
-      ...MACOS_CMAKE_FLAGS,
-      libmongocryptRoot
-    ],
+    [...CMAKE_FLAGS, ...WINDOWS_CMAKE_FLAGS, ...MACOS_CMAKE_FLAGS, libmongocryptRoot],
     { cwd: nodeBuildRoot }
   );
-  await run(
-    'cmake',
-    ['--parallel', '4', '--build', '.', '--target', 'install', '--config', 'RelWithDebInfo'],
-    {
-      cwd: nodeBuildRoot
-    }
-  );
+
+  await run('cmake', ['--build', '.', '--target', 'install', '--config', 'RelWithDebInfo'], {
+    cwd: nodeBuildRoot
+  });
 }
 
 export async function downloadLibMongoCrypt(nodeDepsRoot, { ref, crypto }, fastDownload) {
@@ -265,9 +255,7 @@ async function main() {
     const isBuilt = libmongocryptBuiltVersion.trim() === libmongocrypt.ref;
 
     if (clean || !isBuilt) {
-      await buildLibMongoCrypt(libmongocryptCloneDir, nodeDepsDir, {
-        crypto: libmongocrypt.crypto
-      });
+      await buildLibMongoCrypt(libmongocryptCloneDir, nodeDepsDir, libmongocrypt);
     }
   } else {
     // Download
