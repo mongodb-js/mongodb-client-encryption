@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [6.1.0-alpha](https://github.com/mongodb-js/mongodb-client-encryption/compare/v6.0.1...v6.1.0-alpha) (2024-06-17)
+
+
+### Features
+
+* **NODE-5908:** support range v2 protocol ([#13](https://github.com/mongodb-js/mongodb-client-encryption/issues/13)) ([4650f7c](https://github.com/mongodb-js/mongodb-client-encryption/commit/4650f7c29caed7e8889d0fe9e05c169484b819a2))
+* **NODE-6226:** build macos universal binary ([#21](https://github.com/mongodb-js/mongodb-client-encryption/issues/21)) ([a044ccd](https://github.com/mongodb-js/mongodb-client-encryption/commit/a044ccd956b2e666d4ddeadc6b98d9b5291d32eb))
+
 ## [6.0.0](https://github.com/mongodb-js/mongodb-client-encryption/compare/v6.0.0-alpha.3...v6.0.0) (2023-08-28)
 
 * 86bd61e docs: Update Node bindings README.md
