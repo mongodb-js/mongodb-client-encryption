@@ -233,8 +233,8 @@ async function main() {
   if (process.platform === 'darwin') {
     // The "arm64" build is actually a universal binary
     await fs.copyFile(
-      `prebuilds/mongodb-client-encryption-v${pkg.version}-napi-v4-darwin-arm64.tar.gz`,
-      `prebuilds/mongodb-client-encryption-v${pkg.version}-napi-v4-darwin-x64.tar.gz`
+      resolveRoot('prebuilds', `mongodb-client-encryption-v${pkg.version}-napi-v4-darwin-arm64.tar.gz`),
+      resolveRoot('prebuilds', `mongodb-client-encryption-v${pkg.version}-napi-v4-darwin-x64.tar.gz`)
     );
   }
 }
