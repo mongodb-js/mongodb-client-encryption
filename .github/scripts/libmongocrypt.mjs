@@ -41,7 +41,8 @@ async function parseArguments() {
   return {
     libmongocrypt: { url: args.values.gitURL, ref: args.values.libVersion },
     clean: args.values.clean,
-    build: args.values.build
+    build: args.values.build,
+    pkg
   };
 }
 
@@ -189,7 +190,7 @@ export async function downloadLibMongoCrypt(nodeDepsRoot, { ref }) {
 }
 
 async function main() {
-  const { libmongocrypt, build, clean } = await parseArguments();
+  const { libmongocrypt, build, clean, pkg } = await parseArguments();
 
   const nodeDepsDir = resolveRoot('deps');
 
@@ -228,6 +229,14 @@ async function main() {
   // The prebuild command will make both a .node file in `./build` (local and CI testing will run on current code)
   // it will also produce `./prebuilds/mongodb-client-encryption-vVERSION-napi-vNAPI_VERSION-OS-ARCH.tar.gz`.
   await run('npm', ['run', 'prebuild']);
+
+  if (process.platform === 'darwin') {
+    // The "arm64" build is actually a universal binary
+    await fs.copyFile(
+      `prebuilds/mongodb-client-encryption-v${pkg.version}-napi-v4-darwin-arm64.tar.gz`,
+      `prebuilds/mongodb-client-encryption-v${pkg.version}-napi-v4-darwin-x64.tar.gz`
+    );
+  }
 }
 
 await main();
