@@ -90,11 +90,11 @@ jobs:
         uses: ./.github/actions/setup
       - name: actions/sign_and_upload_package
         uses: ./.github/actions/sign_and_upload_package
-        with: 
+        with:
           aws_role_arn: ${{ secrets.AWS_ROLE_ARN }}
           aws_region_name: 'us-east-1'
           aws_secret_id: ${{ secrets.AWS_SECRET_ID }}
           npm_package_name: 'mongodb-client-encryption'
-      - run: npm publish --provenance
+      - run: npm publish --provenance --tag=alpha
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
