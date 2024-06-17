@@ -33,6 +33,21 @@ Run the following command to build libmongocrypt and setup the node bindings for
 bash ./etc/build-static.sh
 ```
 
+#### Prebuild Platforms
+
+Below are the platforms that are available as prebuilds on each github release.
+`prebuild-install` downloads these automatically depending on the platform you are running npm install on.
+
+- Linux GLIBC 2.23 or later
+    - s390x
+    - arm64
+    - x64
+- MacOS universal binary
+    - x64
+    - arm64
+- Windows
+    - x64
+
 #### Linting
 
 We lint both the c++ bindings and the Typescript.
