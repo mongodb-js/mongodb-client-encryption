@@ -5,6 +5,7 @@
         "<!(node -p \"require('node-addon-api').include_dir\")",
     ],
     'variables': {
+        'ARCH': '<(host_arch)',
         'variables': {
             'build_type%': "dynamic",
         },
@@ -24,14 +25,6 @@
       'GCC_ENABLE_CPP_EXCEPTIONS': 'YES',
       'CLANG_CXX_LIBRARY': 'libc++',
       'MACOSX_DEPLOYMENT_TARGET': '10.12',
-      "OTHER_CFLAGS": [
-        "-arch x86_64",
-        "-arch arm64"
-      ],
-      "OTHER_LDFLAGS": [
-        "-arch x86_64",
-        "-arch arm64"
-      ]
     },
     'cflags!': [ '-fno-exceptions' ],
     'cflags_cc!': [ '-fno-exceptions' ],
@@ -43,6 +36,18 @@
           'cflags+': ['-fvisibility=hidden'],
           'xcode_settings': {
             'GCC_SYMBOLS_PRIVATE_EXTERN': 'YES', # -fvisibility=hidden
+          }
+      }],
+      ['OS=="mac" and ARCH=="arm64"', {
+          'xcode_settings': {
+            "OTHER_CFLAGS": [
+              "-arch x86_64",
+              "-arch arm64"
+            ],
+            "OTHER_LDFLAGS": [
+              "-arch x86_64",
+              "-arch arm64"
+            ]
           }
       }],
       ['build_type=="dynamic"', {

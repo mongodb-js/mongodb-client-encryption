@@ -1,4 +1,5 @@
-//@ts-check
+// @ts-check
+
 import util from 'node:util';
 import process from 'node:process';
 import fs from 'node:fs/promises';
@@ -22,6 +23,7 @@ async function parseArguments() {
   const options = {
     gitURL: { short: 'u', type: 'string', default: 'https://github.com/mongodb/libmongocrypt.git' },
     libVersion: { short: 'l', type: 'string', default: pkg['mongodb:libmongocrypt'] },
+    'allow-only-x64-darwin': { type: 'boolean', default: false },
     clean: { short: 'c', type: 'boolean', default: false },
     build: { short: 'b', type: 'boolean', default: false },
     fastDownload: { type: 'boolean', default: false }, // Potentially incorrect download, only for the brave and impatient
@@ -46,6 +48,7 @@ async function parseArguments() {
     fastDownload: args.values.fastDownload,
     clean: args.values.clean,
     build: args.values.build,
+    allowOnlyX64Darwin: args.values['allow-only-x64-darwin'],
     pkg
   };
 }
@@ -125,14 +128,14 @@ export async function buildLibMongoCrypt(libmongocryptRoot, nodeDepsRoot) {
       ? toFlags({ Thost: 'x64', A: 'x64', DENABLE_WINDOWS_STATIC_RUNTIME: 'ON' })
       : [];
 
-  const MACOS_CMAKE_FLAGS =
-    process.platform === 'darwin' // The minimum macos target version we want for
+  const DARWIN_CMAKE_FLAGS =
+    process.platform === 'darwin' // The minimum darwin target version we want for
       ? toFlags({ DCMAKE_OSX_DEPLOYMENT_TARGET: '10.12' })
       : [];
 
   await run(
     'cmake',
-    [...CMAKE_FLAGS, ...WINDOWS_CMAKE_FLAGS, ...MACOS_CMAKE_FLAGS, libmongocryptRoot],
+    [...CMAKE_FLAGS, ...WINDOWS_CMAKE_FLAGS, ...DARWIN_CMAKE_FLAGS, libmongocryptRoot],
     { cwd: nodeBuildRoot }
   );
   await run('cmake', ['--build', '.', '--target', 'install', '--config', 'RelWithDebInfo'], {
@@ -272,16 +275,25 @@ async function main() {
 
   if (process.platform === 'darwin') {
     // The "arm64" build is actually a universal binary
-    await fs.copyFile(
-      resolveRoot(
-        'prebuilds',
-        `mongodb-client-encryption-v${pkg.version}-napi-v4-darwin-arm64.tar.gz`
-      ),
-      resolveRoot(
-        'prebuilds',
-        `mongodb-client-encryption-v${pkg.version}-napi-v4-darwin-x64.tar.gz`
-      )
-    );
+    try {
+      await fs.copyFile(
+        resolveRoot(
+          'prebuilds',
+          `mongodb-client-encryption-v${pkg.version}-napi-v4-darwin-arm64.tar.gz`
+        ),
+        resolveRoot(
+          'prebuilds',
+          `mongodb-client-encryption-v${pkg.version}-napi-v4-darwin-x64.tar.gz`
+        )
+      );
+    } catch {
+      if (process.arch === 'x64') {
+        // The user of this script is building on an x64/intel/amd64 darwin which cannot build a universal bundle
+        // By default we exit with failure because we do not want to release an intel only build
+        console.error('Intel Darwin cannot build a universal bundle');
+        process.exitCode = args.allowOnlyX64Darwin ? 0 : 1;
+      }
+    }
   }
 }
 
