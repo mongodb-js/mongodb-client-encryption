@@ -229,6 +229,8 @@ async function main() {
   // The prebuild command will make both a .node file in `./build` (local and CI testing will run on current code)
   // it will also produce `./prebuilds/mongodb-client-encryption-vVERSION-napi-vNAPI_VERSION-OS-ARCH.tar.gz`.
   await run('npm', ['run', 'prebuild']);
+  // Compile Typescript
+  await run('npm', ['run', 'prepare']);
 
   if (process.platform === 'darwin') {
     // The "arm64" build is actually a universal binary
