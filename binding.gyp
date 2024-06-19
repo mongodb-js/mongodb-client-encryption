@@ -18,7 +18,8 @@
         ]
     },
     'sources': [
-      'addon/mongocrypt.cc'
+      'addon/mongocrypt.cc',
+      'addon/openssl-crypto.cc'
     ],
     'xcode_settings': {
       'GCC_ENABLE_CPP_EXCEPTIONS': 'YES',

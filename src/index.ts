@@ -80,6 +80,7 @@ export interface MongoCrypt {
     version: bigint;
     versionStr: string;
   } | null;
+  readonly cryptoHooksProvider: 'js' | 'native_openssl' | null;
 }
 
 export type ExplicitEncryptionContextOptions = NonNullable<
