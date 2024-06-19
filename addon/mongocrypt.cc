@@ -399,20 +399,18 @@ std::unique_ptr<CryptoHooks> MongoCrypt::createJSCryptoHooks() {
         return true;
     };
 
-    return std::make_unique<CryptoHooks>(CryptoHooks {
-        "js",
-        aes_256_cbc_encrypt,
-        aes_256_cbc_decrypt,
-        random,
-        hmac_sha_512,
-        hmac_sha_256,
-        sha_256,
-        aes_256_ctr_encrypt,
-        aes_256_ctr_decrypt,
-        nullptr,
-        sign_rsa_sha256,
-        this
-    });
+    return std::make_unique<CryptoHooks>(CryptoHooks{"js",
+                                                     aes_256_cbc_encrypt,
+                                                     aes_256_cbc_decrypt,
+                                                     random,
+                                                     hmac_sha_512,
+                                                     hmac_sha_256,
+                                                     sha_256,
+                                                     aes_256_ctr_encrypt,
+                                                     aes_256_ctr_decrypt,
+                                                     nullptr,
+                                                     sign_rsa_sha256,
+                                                     this});
 }
 
 bool MongoCrypt::installCryptoHooks() {
@@ -441,9 +439,7 @@ bool MongoCrypt::installCryptoHooks() {
     }
 
     if (hooks.aes_256_ecb_encrypt &&
-        !mongocrypt_setopt_aes_256_ecb(
-            _mongo_crypt.get(), hooks.aes_256_ecb_encrypt, hooks.ctx)
-        ) {
+        !mongocrypt_setopt_aes_256_ecb(_mongo_crypt.get(), hooks.aes_256_ecb_encrypt, hooks.ctx)) {
         return false;
     }
 
@@ -565,7 +561,8 @@ Value MongoCrypt::CryptSharedLibVersionInfo(const CallbackInfo& info) {
 }
 
 Value MongoCrypt::CryptoHooksProvider(const CallbackInfo& info) {
-    if (!_crypto_hooks) return Env().Null();
+    if (!_crypto_hooks)
+        return Env().Null();
     return String::New(Env(), _crypto_hooks->id);
 }
 
