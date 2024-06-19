@@ -90,14 +90,15 @@ static bool set_status_from_openssl(mongocrypt_status_t* status, const char* bas
 }
 
 /* encrypt_with_cipher encrypts @in with the OpenSSL cipher specified by
- * @cipher.
+ * @Cipher.
  * @key is the input key. @iv is the input IV.
  * @out is the output ciphertext. @out must be allocated by the caller with
  * enough room for the ciphertext.
  * @bytes_written is the number of bytes that were written to @out.
  * Returns false and sets @status on error. @status is required. */
-static bool encrypt_with_cipher(
-    const EVP_CIPHER* cipher,
+template<typename Cipher>
+bool encrypt_with_cipher(
+    void* unused_ctx,
     mongocrypt_binary_t* key,
     mongocrypt_binary_t* iv,
     mongocrypt_binary_t* in,
@@ -106,6 +107,7 @@ static bool encrypt_with_cipher(
     mongocrypt_status_t* status) {
     int intermediate_bytes_written = 0;
 
+    const EVP_CIPHER* cipher = Cipher::Get();
     EVP_CIPHER_CTX* ctx = S(EVP_CIPHER_CTX_new)();
     auto cleanup_ctx = Cleanup([&]() { S(EVP_CIPHER_CTX_free)(ctx); });
 
@@ -155,14 +157,15 @@ static bool encrypt_with_cipher(
 }
 
 /* decrypt_with_cipher decrypts @in with the OpenSSL cipher specified by
- * @cipher.
+ * @Cipher.
  * @key is the input key. @iv is the input IV.
  * @out is the output plaintext. @out must be allocated by the caller with
  * enough room for the plaintext.
  * @bytes_written is the number of bytes that were written to @out.
  * Returns false and sets @status on error. @status is required. */
-static bool decrypt_with_cipher(
-    const EVP_CIPHER *cipher,
+template<typename Cipher>
+bool decrypt_with_cipher(
+    void* unused_ctx,
     mongocrypt_binary_t* key,
     mongocrypt_binary_t* iv,
     mongocrypt_binary_t* in,
@@ -171,6 +174,7 @@ static bool decrypt_with_cipher(
     mongocrypt_status_t* status) {
     int intermediate_bytes_written = 0;
 
+    const EVP_CIPHER* cipher = Cipher::Get();
     EVP_CIPHER_CTX* ctx = S(EVP_CIPHER_CTX_new)();
     auto cleanup_ctx = Cleanup([&]() { S(EVP_CIPHER_CTX_free)(ctx); });
     ASSERT(ctx);
@@ -220,51 +224,20 @@ static bool decrypt_with_cipher(
     return true;
 }
 
-bool aes_256_cbc_encrypt(
-    void* ctx,
-    mongocrypt_binary_t* key,
-    mongocrypt_binary_t* iv,
-    mongocrypt_binary_t* in,
-    mongocrypt_binary_t* out,
-    uint32_t* bytes_written,
-    mongocrypt_status_t* status) {
-    return encrypt_with_cipher(S(EVP_aes_256_cbc)(), key, iv, in, out, bytes_written, status);
-}
-
-bool aes_256_cbc_decrypt(
-    void* ctx,
-    mongocrypt_binary_t* key,
-    mongocrypt_binary_t* iv,
-    mongocrypt_binary_t* in,
-    mongocrypt_binary_t* out,
-    uint32_t* bytes_written,
-    mongocrypt_status_t* status) {
-    return decrypt_with_cipher(S(EVP_aes_256_cbc)(), key, iv, in, out, bytes_written, status);
-}
-
-bool aes_256_ecb_encrypt(
-    void* ctx,
-    mongocrypt_binary_t* key,
-    mongocrypt_binary_t* iv,
-    mongocrypt_binary_t* in,
-    mongocrypt_binary_t* out,
-    uint32_t* bytes_written,
-    mongocrypt_status_t* status) {
-    return encrypt_with_cipher(S(EVP_aes_256_ecb)(), key, iv, in, out, bytes_written, status);
-}
-
 /* hmac_with_hash computes an HMAC of @in with the OpenSSL hash specified by
- * @hash.
+ * @Hash.
  * @key is the input key.
  * @out is the output. @out must be allocated by the caller with
  * the exact length for the output. E.g. for HMAC 256, @out->len must be 32.
  * Returns false and sets @status on error. @status is required. */
-static bool hmac_with_hash(
-    const EVP_MD* hash,
+template<typename Hash>
+bool hmac_with_hash(
+    void* unused_ctx,
     mongocrypt_binary_t *key,
     mongocrypt_binary_t *in,
     mongocrypt_binary_t *out,
     mongocrypt_status_t *status) {
+    const EVP_MD* hash = Hash::Get();
     ASSERT(hash);
     ASSERT(key);
     ASSERT(in);
@@ -283,26 +256,8 @@ static bool hmac_with_hash(
     return true;
 }
 
-bool hmac_sha_512(
-    void* ctx,
-    mongocrypt_binary_t* key,
-    mongocrypt_binary_t* in,
-    mongocrypt_binary_t* out,
-    mongocrypt_status_t* status) {
-    return hmac_with_hash(S(EVP_sha512)(), key, in, out, status);
-}
-
-bool hmac_sha_256(
-    void* ctx,
-    mongocrypt_binary_t* key,
-    mongocrypt_binary_t* in,
-    mongocrypt_binary_t* out,
-    mongocrypt_status_t* status) {
-    return hmac_with_hash(S(EVP_sha256)(), key, in, out, status);
-}
-
 bool random_fn(
-    void* ctx,
+    void* unused_ctx,
     mongocrypt_binary_t* out,
     uint32_t count,
     mongocrypt_status_t* status) {
@@ -321,46 +276,19 @@ bool random_fn(
     return true;
 }
 
-bool aes_256_ctr_encrypt(
-    void* ctx,
-    mongocrypt_binary_t* key,
-    mongocrypt_binary_t* iv,
+template<typename Hash>
+bool compute_hash (
+    void* unused_ctx,
     mongocrypt_binary_t* in,
     mongocrypt_binary_t* out,
-    uint32_t* bytes_written,
     mongocrypt_status_t* status) {
-    return encrypt_with_cipher(S(EVP_aes_256_ctr)(), key, iv, in, out, bytes_written, status);
-}
+    const EVP_MD* hash = Hash::Get();
+    ASSERT(hash);
 
-bool aes_256_ctr_decrypt(
-    void* ctx,
-    mongocrypt_binary_t* key,
-    mongocrypt_binary_t* iv,
-    mongocrypt_binary_t* in,
-    mongocrypt_binary_t* out,
-    uint32_t* bytes_written,
-    mongocrypt_status_t* status) {
-    return decrypt_with_cipher(S(EVP_aes_256_ctr)(), key, iv, in, out, bytes_written, status);
-}
-
-bool native_crypto_hmac_sha_256(
-    void* ctx,
-    mongocrypt_binary_t* key,
-    mongocrypt_binary_t* in,
-    mongocrypt_binary_t* out,
-    mongocrypt_status_t* status) {
-    return hmac_with_hash(S(EVP_sha256)(), key, in, out, status);
-}
-
-bool sha_256 (
-    void* ctx,
-    mongocrypt_binary_t* in,
-    mongocrypt_binary_t* out,
-    mongocrypt_status_t* status) {
     EVP_MD_CTX* digest_ctxp = S(EVP_MD_CTX_new)();
     auto cleanup_ctx = Cleanup([&]() { S(EVP_MD_CTX_free)(digest_ctxp); });
 
-    if (!S(EVP_DigestInit_ex)(digest_ctxp, S(EVP_sha256) (), nullptr)) {
+    if (!S(EVP_DigestInit_ex)(digest_ctxp, hash, nullptr)) {
         return set_status_from_openssl(status, "error in EVP_DigestInit_ex");
     }
 
@@ -375,12 +303,16 @@ bool sha_256 (
     return true;
 }
 
-bool sign_rsa_sha256 (
+template<typename Hash>
+bool sign_rsa (
     void* unused_ctx,
     mongocrypt_binary_t* key,
     mongocrypt_binary_t* in,
     mongocrypt_binary_t* out,
     mongocrypt_status_t* status) {
+    const EVP_MD* hash = Hash::Get();
+
+    ASSERT(hash);
     ASSERT(key);
     ASSERT(in);
     ASSERT(out);
@@ -389,7 +321,7 @@ bool sign_rsa_sha256 (
     EVP_PKEY* pkey = nullptr;
     size_t signature_out_len = 256;
 
-    EVP_MD_CTX*ctx = S(EVP_MD_CTX_new)();
+    EVP_MD_CTX* ctx = S(EVP_MD_CTX_new)();
     auto cleanup_ctx = Cleanup([&]() { S(EVP_MD_CTX_free)(ctx); });
     ASSERT(key->len <= LONG_MAX);
     const unsigned char* key_data = static_cast<unsigned char*>(key->data);
@@ -403,7 +335,7 @@ bool sign_rsa_sha256 (
         return set_status_from_openssl(status, "error in d2i_PrivateKey");
     }
 
-    if (!S(EVP_DigestSignInit)(ctx, nullptr, S(EVP_sha256)(), nullptr /* engine */, pkey)) {
+    if (!S(EVP_DigestSignInit)(ctx, nullptr, hash, nullptr /* engine */, pkey)) {
         return set_status_from_openssl(status, "error in EVP_DigestSignInit");
     }
 
@@ -417,7 +349,6 @@ bool sign_rsa_sha256 (
 
     return true;
 }
-
 
 void* opensslsym(const char* name) {
     static struct OwnProcessDylib {
@@ -462,18 +393,24 @@ std::unique_ptr<CryptoHooks> createOpenSSLCryptoHooks() {
     // Check that OpenSSL version is in [3.0.0, 4.0.0)
     if (openssl_version < 0x30000000L || openssl_version >= 0x40000000L) return {};
 
+    struct AES256CBC { static const EVP_CIPHER* Get() { return S(EVP_aes_256_cbc)(); } };
+    struct AES256ECB { static const EVP_CIPHER* Get() { return S(EVP_aes_256_ecb)(); } };
+    struct AES256CTR { static const EVP_CIPHER* Get() { return S(EVP_aes_256_ctr)(); } };
+    struct SHA512 { static const EVP_MD* Get() { return S(EVP_sha512)(); } };
+    struct SHA256 { static const EVP_MD* Get() { return S(EVP_sha256)(); } };
+
     return std::make_unique<CryptoHooks>(CryptoHooks {
         "native_openssl",
-        aes_256_cbc_encrypt,
-        aes_256_cbc_decrypt,
+        encrypt_with_cipher<AES256CBC>,
+        decrypt_with_cipher<AES256CBC>,
         random_fn,
-        hmac_sha_512,
-        hmac_sha_256,
-        sha_256,
-        aes_256_ctr_encrypt,
-        aes_256_ctr_decrypt,
-        aes_256_ecb_encrypt,
-        sign_rsa_sha256,
+        hmac_with_hash<SHA512>,
+        hmac_with_hash<SHA256>,
+        compute_hash<SHA256>,
+        encrypt_with_cipher<AES256CTR>,
+        decrypt_with_cipher<AES256CTR>,
+        encrypt_with_cipher<AES256ECB>,
+        sign_rsa<SHA256>,
         nullptr
     });
 }
