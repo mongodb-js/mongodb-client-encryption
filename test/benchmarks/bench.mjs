@@ -114,18 +114,19 @@ function main() {
     ].join('\n');
   console.log(systemInfo());
 
-  console.log(
-    `BenchmarkRunner is using ` +
-      `libmongocryptVersion=${MongoCrypt.libmongocryptVersion}, ` +
-      `warmupSecs=${warmupSecs}, ` +
-      `testInSecs=${testInSecs}`
-  );
-
   const mongoCryptOptions = { kmsProviders: BSON.serialize(kmsProviders) };
   if (!BENCH_WITH_NATIVE_CRYPTO) mongoCryptOptions.cryptoCallbacks = cryptoCallbacks;
   if (cryptSharedLibPath) mongoCryptOptions.cryptSharedLibPath = cryptSharedLibPath;
 
   const mongoCrypt = new MongoCrypt(mongoCryptOptions);
+
+  console.log(
+    `BenchmarkRunner is using ` +
+      `libmongocryptVersion=${MongoCrypt.libmongocryptVersion}, ` +
+      `cryptoHooks=${mongoCrypt.cryptoHooksProvider}, ` +
+      `warmupSecs=${warmupSecs}, ` +
+      `testInSecs=${testInSecs}`
+  );
 
   const encrypted = createEncryptedDocument(mongoCrypt);
   const toDecrypt = BSON.serialize(encrypted);
