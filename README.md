@@ -48,6 +48,8 @@ Can be configured to clone and build without crypto.
 --clean                 Combined with --build, the script will not skip cloning and rebuilding libmongocrypt.
 --build                 Instead of downloading, clone and build libmongocrypt along with the bindings.
 --no-macos-universal    Disable creating a universal binary for MacOS builds.
+--dynamic               Skips cloning or downloading libmongocrypt, runs prebuild with build_type set to "dynamic" to compile
+                        a prebuild that links to a system copy of libmongocrypt.
 
 Only suitable for local development:
 

@@ -7,7 +7,7 @@
     'variables': {
       'ARCH': '<(host_arch)',
       'no_macos_universal%': 'false',
-      'build_type%': 'dynamic',
+      'build_type%': 'static',
     },
     'sources': [
       'addon/mongocrypt.cc'

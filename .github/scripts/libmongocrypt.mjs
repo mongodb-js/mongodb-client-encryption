@@ -26,6 +26,7 @@ async function parseArguments() {
     'no-macos-universal': { type: 'boolean', default: false },
     clean: { short: 'c', type: 'boolean', default: false },
     build: { short: 'b', type: 'boolean', default: false },
+    dynamic: { type: 'boolean', default: false },
     fastDownload: { type: 'boolean', default: false }, // Potentially incorrect download, only for the brave and impatient
     help: { short: 'h', type: 'boolean', default: false }
   };
@@ -48,6 +49,7 @@ async function parseArguments() {
     fastDownload: args.values.fastDownload,
     clean: args.values.clean,
     build: args.values.build,
+    dynamic: args.values.dynamic,
     noMacosUniversal: args.values['no-macos-universal'],
     pkg
   };
@@ -237,7 +239,7 @@ async function main() {
 
   const nodeDepsDir = resolveRoot('deps');
 
-  if (args.build) {
+  if (args.build && !args.dynamic) {
     const libmongocryptCloneDir = resolveRoot('_libmongocrypt');
 
     const currentLibMongoCryptBranch = await fs
@@ -257,7 +259,7 @@ async function main() {
     if (args.clean || !isBuilt) {
       await buildLibMongoCrypt(libmongocryptCloneDir, nodeDepsDir);
     }
-  } else {
+  } else if (!args.dynamic) {
     // Download
     await downloadLibMongoCrypt(nodeDepsDir, args);
   }
@@ -269,10 +271,17 @@ async function main() {
   await run('npm', ['install', '--ignore-scripts']);
   // The prebuild command will make both a .node file in `./build` (local and CI testing will run on current code)
   // it will also produce `./prebuilds/mongodb-client-encryption-vVERSION-napi-vNAPI_VERSION-OS-ARCH.tar.gz`.
-  const prebuildOptions =
-    process.platform === 'darwin' && args.noMacosUniversal
-      ? { env: { ...process.env, GYP_DEFINES: 'no_macos_universal=true' } }
-      : undefined;
+  let prebuildOptions;
+  if (process.platform === 'darwin' && args.noMacosUniversal) {
+    prebuildOptions ??= { env: { ...process.env } };
+    prebuildOptions.env.GYP_DEFINES = (prebuildOptions.env.GYP_DEFINES ?? '') + 'no_macos_universal=true '
+  }
+
+  if (args.dynamic) {
+    prebuildOptions ??= { env: { ...process.env } }
+    prebuildOptions.env.GYP_DEFINES = (prebuildOptions.env.GYP_DEFINES ?? '') + 'build_type=dynamic '
+  }
+
   await run('npm', ['run', 'prebuild'], prebuildOptions);
   // Compile Typescript
   await run('npm', ['run', 'prepare']);
