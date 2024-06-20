@@ -27,10 +27,33 @@ npm install mongodb-client-encryption
 
 #### Setup
 
-Run the following command to build libmongocrypt and setup the node bindings for development:
+
+Run the following command to build libmongocrypt and you are setup to develop the node bindings:
 
 ```shell
-bash ./etc/build-static.sh
+npm run install:libmongocrypt
+```
+
+#### `libmongocrypt.mjs`
+
+```
+node libmongocrypt.mjs [--gitURL=string] [--libVersion=string] [--clean] [--build] [--no-crypto] [--fastDownload]
+
+By default attempts to download and compile the bindings with the crypto prebuilds of libmongocrypt.
+Can be configured to clone and build without crypto.
+
+--gitURL=string         A custom remote git repository to clone libmongocrypt from. You must also set --build to use this.
+--libVersion=string     A custom version reference to either download or checkout after cloning.
+                        You may use "latest" to get current libmongocrypt `HEAD`.
+--clean                 Combined with --build, the script will not skip cloning and rebuilding libmongocrypt.
+--build                 Instead of downloading, clone and build libmongocrypt along with the bindings.
+--no-crypto             Use libmongocrypt prebuild or build libmongocrypt without OpenSSL symbols.
+                        Requires the bindings to provide cryptoCallbacks.
+
+Only suitable for local development:
+
+--fastDownload          If you are improving this script or otherwise repeatedly downloading libmongocrypt,
+                        this flag will interrupt the un-tar operation as early as possible. It should work, most of the time.
 ```
 
 #### Prebuild Platforms
