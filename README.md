@@ -37,7 +37,7 @@ npm run install:libmongocrypt
 #### `libmongocrypt.mjs`
 
 ```
-node libmongocrypt.mjs [--gitURL=string] [--libVersion=string] [--clean] [--build] [--no-crypto] [--fastDownload]
+node libmongocrypt.mjs [optional flags]
 
 By default attempts to download and compile the bindings with the crypto prebuilds of libmongocrypt.
 Can be configured to clone and build without crypto.
