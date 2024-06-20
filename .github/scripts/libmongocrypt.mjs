@@ -1,3 +1,4 @@
+//@ts-check
 import util from 'node:util';
 import process from 'node:process';
 import fs from 'node:fs/promises';
@@ -23,6 +24,7 @@ async function parseArguments() {
     libVersion: { short: 'l', type: 'string', default: pkg['mongodb:libmongocrypt'] },
     clean: { short: 'c', type: 'boolean', default: false },
     build: { short: 'b', type: 'boolean', default: false },
+    fastDownload: { type: 'boolean', default: false }, // Potentially incorrect download, only for the brave and impatient
     help: { short: 'h', type: 'boolean', default: false }
   };
 
@@ -39,7 +41,9 @@ async function parseArguments() {
   }
 
   return {
-    libmongocrypt: { url: args.values.gitURL, ref: args.values.libVersion },
+    url: args.values.gitURL,
+    ref: args.values.libVersion,
+    fastDownload: args.values.fastDownload,
     clean: args.values.clean,
     build: args.values.build,
     pkg
@@ -136,7 +140,7 @@ export async function buildLibMongoCrypt(libmongocryptRoot, nodeDepsRoot) {
   });
 }
 
-export async function downloadLibMongoCrypt(nodeDepsRoot, { ref }) {
+export async function downloadLibMongoCrypt(nodeDepsRoot, { ref, fastDownload }) {
   const downloadURL =
     ref === 'latest'
       ? 'https://mciuploads.s3.amazonaws.com/libmongocrypt/all/master/latest/libmongocrypt-all.tar.gz'
@@ -164,61 +168,95 @@ export async function downloadLibMongoCrypt(nodeDepsRoot, { ref }) {
 
   console.error(`Platform: ${detectedPlatform} Prebuild: ${prebuild}`);
 
-  const unzipArgs = ['-xzv', '-C', `_libmongocrypt-${ref}`, `${prebuild}/nocrypto`];
+  const downloadDestination = `${prebuild}/nocrypto`;
+  const unzipArgs = ['-xzv', '-C', `_libmongocrypt-${ref}`, downloadDestination];
   console.error(`+ tar ${unzipArgs.join(' ')}`);
   const unzip = child_process.spawn('tar', unzipArgs, {
-    stdio: ['pipe', 'inherit'],
+    stdio: ['pipe', 'inherit', 'pipe'],
     cwd: resolveRoot('.')
   });
+  if (unzip.stdin == null) throw new Error('Tar process must have piped stdin');
 
   const [response] = await events.once(https.get(downloadURL), 'response');
 
   const start = performance.now();
-  await stream.pipeline(response, unzip.stdin);
+
+  let signal;
+  if (fastDownload) {
+    /**
+     * Tar will print out each file it finds inside MEMBER (ex. macos/nocrypto)
+     * For each file it prints, we give it a deadline of 3 seconds to print the next one.
+     * If nothing prints after 3 seconds we exit early.
+     * This depends on the tar file being in order and un-tar-able in under 3sec.
+     */
+    const controller = new AbortController();
+    signal = controller.signal;
+    let firstMemberSeen = true;
+    let timeout;
+    unzip.stderr.on('data', chunk => {
+      process.stderr.write(chunk, () => {
+        if (firstMemberSeen) {
+          firstMemberSeen = false;
+          timeout = setTimeout(() => {
+            clearTimeout(timeout);
+            unzip.stderr.removeAllListeners('data');
+            controller.abort();
+          }, 3_000);
+        }
+        timeout?.refresh();
+      });
+    });
+  }
+
+  try {
+    await stream.pipeline(response, unzip.stdin, { signal });
+  } catch {
+    await fs.access(path.join(`_libmongocrypt-${ref}`, downloadDestination));
+  }
+
   const end = performance.now();
 
   console.error(`downloaded libmongocrypt in ${(end - start) / 1000} secs...`);
 
   await fs.rm(nodeDepsRoot, { recursive: true, force: true });
   await fs.cp(resolveRoot(destination, prebuild, 'nocrypto'), nodeDepsRoot, { recursive: true });
-  const currentPath = path.join(nodeDepsRoot, 'lib64');
+  const potentialLib64Path = path.join(nodeDepsRoot, 'lib64');
   try {
-    await fs.rename(currentPath, path.join(nodeDepsRoot, 'lib'));
+    await fs.rename(potentialLib64Path, path.join(nodeDepsRoot, 'lib'));
   } catch (error) {
-    console.error(`error renaming ${currentPath}: ${error.message}`);
+    await fs.access(path.join(nodeDepsRoot, 'lib')); // Ensure there is a "lib" directory
   }
 }
 
 async function main() {
-  const { libmongocrypt, build, clean, pkg } = await parseArguments();
+  const { pkg, ...args } = await parseArguments();
+  console.log(args);
 
   const nodeDepsDir = resolveRoot('deps');
 
-  if (build) {
+  if (args.build) {
     const libmongocryptCloneDir = resolveRoot('_libmongocrypt');
 
     const currentLibMongoCryptBranch = await fs
       .readFile(path.join(libmongocryptCloneDir, '.git', 'HEAD'), 'utf8')
       .catch(() => '');
-    const isClonedAndCheckedOut = currentLibMongoCryptBranch
-      .trim()
-      .endsWith(`r-${libmongocrypt.ref}`);
+    const isClonedAndCheckedOut = currentLibMongoCryptBranch.trim().endsWith(`r-${args.ref}`);
 
-    if (clean || !isClonedAndCheckedOut) {
-      await cloneLibMongoCrypt(libmongocryptCloneDir, libmongocrypt);
+    if (args.clean || !isClonedAndCheckedOut) {
+      await cloneLibMongoCrypt(libmongocryptCloneDir, args);
     }
 
     const libmongocryptBuiltVersion = await fs
       .readFile(path.join(libmongocryptCloneDir, 'VERSION_CURRENT'), 'utf8')
       .catch(() => '');
-    const isBuilt = libmongocryptBuiltVersion.trim() === libmongocrypt.ref;
+    const isBuilt = libmongocryptBuiltVersion.trim() === args.ref;
 
-    if (clean || !isBuilt) {
+    if (args.clean || !isBuilt) {
       await buildLibMongoCrypt(libmongocryptCloneDir, nodeDepsDir);
     }
   } else {
     // Download
-    await downloadLibMongoCrypt(nodeDepsDir, libmongocrypt);
+    await downloadLibMongoCrypt(nodeDepsDir, args);
   }
 
   await fs.rm(resolveRoot('build'), { force: true, recursive: true });
@@ -233,8 +271,14 @@ async function main() {
   if (process.platform === 'darwin') {
     // The "arm64" build is actually a universal binary
     await fs.copyFile(
-      resolveRoot('prebuilds', `mongodb-client-encryption-v${pkg.version}-napi-v4-darwin-arm64.tar.gz`),
-      resolveRoot('prebuilds', `mongodb-client-encryption-v${pkg.version}-napi-v4-darwin-x64.tar.gz`)
+      resolveRoot(
+        'prebuilds',
+        `mongodb-client-encryption-v${pkg.version}-napi-v4-darwin-arm64.tar.gz`
+      ),
+      resolveRoot(
+        'prebuilds',
+        `mongodb-client-encryption-v${pkg.version}-napi-v4-darwin-x64.tar.gz`
+      )
     );
   }
 }
