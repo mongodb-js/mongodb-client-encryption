@@ -47,8 +47,6 @@ Can be configured to clone and build without crypto.
                         You may use "latest" to get current libmongocrypt `HEAD`.
 --clean                 Combined with --build, the script will not skip cloning and rebuilding libmongocrypt.
 --build                 Instead of downloading, clone and build libmongocrypt along with the bindings.
---no-crypto             Use libmongocrypt prebuild or build libmongocrypt without OpenSSL symbols.
-                        Requires the bindings to provide cryptoCallbacks.
 
 Only suitable for local development:
 
