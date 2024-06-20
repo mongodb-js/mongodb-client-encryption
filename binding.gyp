@@ -5,18 +5,9 @@
         "<!(node -p \"require('node-addon-api').include_dir\")",
     ],
     'variables': {
-        'ARCH': '<(host_arch)',
-        'variables': {
-            'build_type%': "dynamic",
-        },
-        'conditions': [
-          ['OS=="win"', {
-            'build_type' : "<!(echo %BUILD_TYPE%)"
-          }],
-          ['OS!="win"', {
-            'build_type' : "<!(echo $BUILD_TYPE)",
-          }]
-        ]
+      'ARCH': '<(host_arch)',
+      'no_macos_universal%': 'false',
+      'build_type%': 'dynamic',
     },
     'sources': [
       'addon/mongocrypt.cc'
@@ -38,7 +29,7 @@
             'GCC_SYMBOLS_PRIVATE_EXTERN': 'YES', # -fvisibility=hidden
           }
       }],
-      ['OS=="mac" and ARCH=="arm64"', {
+      ['OS=="mac" and ARCH=="arm64" and "<(no_macos_universal)"!="true"', {
           'xcode_settings': {
             "OTHER_CFLAGS": [
               "-arch x86_64",

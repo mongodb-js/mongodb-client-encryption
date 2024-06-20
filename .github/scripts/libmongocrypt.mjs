@@ -23,7 +23,7 @@ async function parseArguments() {
   const options = {
     gitURL: { short: 'u', type: 'string', default: 'https://github.com/mongodb/libmongocrypt.git' },
     libVersion: { short: 'l', type: 'string', default: pkg['mongodb:libmongocrypt'] },
-    'allow-only-x64-darwin': { type: 'boolean', default: false },
+    'no-macos-universal': { type: 'boolean', default: false },
     clean: { short: 'c', type: 'boolean', default: false },
     build: { short: 'b', type: 'boolean', default: false },
     fastDownload: { type: 'boolean', default: false }, // Potentially incorrect download, only for the brave and impatient
@@ -48,7 +48,7 @@ async function parseArguments() {
     fastDownload: args.values.fastDownload,
     clean: args.values.clean,
     build: args.values.build,
-    allowOnlyX64Darwin: args.values['allow-only-x64-darwin'],
+    noMacosUniversal: args.values['no-macos-universal'],
     pkg
   };
 }
@@ -269,31 +269,19 @@ async function main() {
   await run('npm', ['install', '--ignore-scripts']);
   // The prebuild command will make both a .node file in `./build` (local and CI testing will run on current code)
   // it will also produce `./prebuilds/mongodb-client-encryption-vVERSION-napi-vNAPI_VERSION-OS-ARCH.tar.gz`.
-  await run('npm', ['run', 'prebuild']);
+  const prebuildOptions =
+    process.platform === 'darwin' && args.noMacosUniversal
+      ? { env: { ...process.env, GYP_DEFINES: 'no_macos_universal=true' } }
+      : undefined;
+  await run('npm', ['run', 'prebuild'], prebuildOptions);
   // Compile Typescript
   await run('npm', ['run', 'prepare']);
 
-  if (process.platform === 'darwin') {
+  if (process.platform === 'darwin' && !args.noMacosUniversal) {
     // The "arm64" build is actually a universal binary
-    try {
-      await fs.copyFile(
-        resolveRoot(
-          'prebuilds',
-          `mongodb-client-encryption-v${pkg.version}-napi-v4-darwin-arm64.tar.gz`
-        ),
-        resolveRoot(
-          'prebuilds',
-          `mongodb-client-encryption-v${pkg.version}-napi-v4-darwin-x64.tar.gz`
-        )
-      );
-    } catch {
-      if (process.arch === 'x64') {
-        // The user of this script is building on an x64/intel/amd64 darwin which cannot build a universal bundle
-        // By default we exit with failure because we do not want to release an intel only build
-        console.error('Intel Darwin cannot build a universal bundle');
-        process.exitCode = args.allowOnlyX64Darwin ? 0 : 1;
-      }
-    }
+    const armTar = `mongodb-client-encryption-v${pkg.version}-napi-v4-darwin-arm64.tar.gz`;
+    const x64Tar = `mongodb-client-encryption-v${pkg.version}-napi-v4-darwin-x64.tar.gz`;
+    await fs.copyFile(resolveRoot('prebuilds', armTar), resolveRoot('prebuilds', x64Tar));
   }
 }
 
