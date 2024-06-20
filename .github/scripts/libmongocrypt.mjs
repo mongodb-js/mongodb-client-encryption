@@ -232,6 +232,9 @@ async function main() {
   const { pkg, ...args } = await parseArguments();
   console.log(args);
 
+  // GLIBC information
+  if (process.platform === 'linux') await run('ldd', ['--version']);
+
   const nodeDepsDir = resolveRoot('deps');
 
   if (args.build) {

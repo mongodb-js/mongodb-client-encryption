@@ -1,4 +1,4 @@
-ARG NODE_BUILD_IMAGE=node:16.20.1-bullseye
+ARG NODE_BUILD_IMAGE=node:16.20.1-buster
 FROM $NODE_BUILD_IMAGE AS build
 
 WORKDIR /mongodb-client-encryption
