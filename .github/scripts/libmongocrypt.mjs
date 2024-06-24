@@ -140,10 +140,10 @@ export async function buildLibMongoCrypt(libmongocryptRoot, nodeDepsRoot, option
   await run(
     options.cMakePath,
     [...CMAKE_FLAGS, ...WINDOWS_CMAKE_FLAGS, ...DARWIN_CMAKE_FLAGS, libmongocryptRoot],
-    { cwd: nodeBuildRoot }
+    { cwd: nodeBuildRoot, shell: process.platform === 'win32' }
   );
   await run(options.cMakePath, ['--build', '.', '--target', 'install', '--config', 'RelWithDebInfo'], {
-    cwd: nodeBuildRoot
+    cwd: nodeBuildRoot, shell: process.platform === 'win32'
   });
 }
 
