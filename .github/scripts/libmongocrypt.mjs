@@ -23,6 +23,7 @@ async function parseArguments() {
   const options = {
     gitURL: { short: 'u', type: 'string', default: 'https://github.com/mongodb/libmongocrypt.git' },
     libVersion: { short: 'l', type: 'string', default: pkg['mongodb:libmongocrypt'] },
+    'cmake-path': { type: 'string', default: 'cmake' },
     'no-macos-universal': { type: 'boolean', default: false },
     clean: { short: 'c', type: 'boolean', default: false },
     build: { short: 'b', type: 'boolean', default: false },
@@ -51,6 +52,7 @@ async function parseArguments() {
     build: args.values.build,
     dynamic: args.values.dynamic,
     noMacosUniversal: args.values['no-macos-universal'],
+    cMakePath: args.values['cmake-path'],
     pkg
   };
 }
@@ -86,7 +88,7 @@ export async function cloneLibMongoCrypt(libmongocryptRoot, { url, ref }) {
   }
 }
 
-export async function buildLibMongoCrypt(libmongocryptRoot, nodeDepsRoot) {
+export async function buildLibMongoCrypt(libmongocryptRoot, nodeDepsRoot, options) {
   console.error('building libmongocrypt...');
 
   const nodeBuildRoot = resolveRoot(nodeDepsRoot, 'tmp', 'libmongocrypt-build');
@@ -136,11 +138,11 @@ export async function buildLibMongoCrypt(libmongocryptRoot, nodeDepsRoot) {
       : [];
 
   await run(
-    'cmake',
+    options.cMakePath,
     [...CMAKE_FLAGS, ...WINDOWS_CMAKE_FLAGS, ...DARWIN_CMAKE_FLAGS, libmongocryptRoot],
     { cwd: nodeBuildRoot }
   );
-  await run('cmake', ['--build', '.', '--target', 'install', '--config', 'RelWithDebInfo'], {
+  await run(options.cMakePath, ['--build', '.', '--target', 'install', '--config', 'RelWithDebInfo'], {
     cwd: nodeBuildRoot
   });
 }
@@ -257,7 +259,7 @@ async function main() {
     const isBuilt = libmongocryptBuiltVersion.trim() === args.ref;
 
     if (args.clean || !isBuilt) {
-      await buildLibMongoCrypt(libmongocryptCloneDir, nodeDepsDir);
+      await buildLibMongoCrypt(libmongocryptCloneDir, nodeDepsDir, args);
     }
   } else if (!args.dynamic) {
     // Download
