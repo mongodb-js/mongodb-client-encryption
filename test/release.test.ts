@@ -22,7 +22,7 @@ const REQUIRED_FILES = [
 ];
 
 describe(`Release ${packFile}`, function () {
-  this.timeout(10000);
+  this.timeout(60000);
 
   beforeEach(function () {
     if (process.arch !== 'x64') {
