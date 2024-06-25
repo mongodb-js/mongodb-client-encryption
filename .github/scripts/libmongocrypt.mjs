@@ -23,7 +23,6 @@ async function parseArguments() {
   const options = {
     gitURL: { short: 'u', type: 'string', default: 'https://github.com/mongodb/libmongocrypt.git' },
     libVersion: { short: 'l', type: 'string', default: pkg['mongodb:libmongocrypt'] },
-    'cmake-path': { type: 'string', default: 'cmake' },
     'no-macos-universal': { type: 'boolean', default: false },
     clean: { short: 'c', type: 'boolean', default: false },
     build: { short: 'b', type: 'boolean', default: false },
@@ -52,7 +51,6 @@ async function parseArguments() {
     build: args.values.build,
     dynamic: args.values.dynamic,
     noMacosUniversal: args.values['no-macos-universal'],
-    cMakePath: args.values['cmake-path'],
     pkg
   };
 }
@@ -75,6 +73,11 @@ async function run(command, args = [], options = {}) {
 /** CLI flag maker: `toFlags({a: 1, b: 2})` yields `['-a=1', '-b=2']` */
 function toFlags(object) {
   return Array.from(Object.entries(object)).map(([k, v]) => `-${k}=${v}`);
+}
+
+/** GYP define maker: `toFlags({a: 1, b: 2})` yields `['a=1', 'b=2']` */
+function toDefines(object) {
+  return Array.from(Object.entries(object)).map(([k, v]) => `${k}=${v}`);
 }
 
 export async function cloneLibMongoCrypt(libmongocryptRoot, { url, ref }) {
@@ -137,13 +140,17 @@ export async function buildLibMongoCrypt(libmongocryptRoot, nodeDepsRoot, option
       ? toFlags({ DCMAKE_OSX_DEPLOYMENT_TARGET: '10.12' })
       : [];
 
+  const cmakeProgram = process.platform === 'win32' ? 'cmake.exe' : 'cmake';
+
   await run(
-    options.cMakePath,
+    cmakeProgram,
     [...CMAKE_FLAGS, ...WINDOWS_CMAKE_FLAGS, ...DARWIN_CMAKE_FLAGS, libmongocryptRoot],
     { cwd: nodeBuildRoot, shell: process.platform === 'win32' }
   );
-  await run(options.cMakePath, ['--build', '.', '--target', 'install', '--config', 'RelWithDebInfo'], {
-    cwd: nodeBuildRoot, shell: process.platform === 'win32'
+
+  await run(cmakeProgram, ['--build', '.', '--target', 'install', '--config', 'RelWithDebInfo'], {
+    cwd: nodeBuildRoot,
+    shell: process.platform === 'win32'
   });
 }
 
@@ -273,16 +280,19 @@ async function main() {
   await run('npm', ['install', '--ignore-scripts']);
   // The prebuild command will make both a .node file in `./build` (local and CI testing will run on current code)
   // it will also produce `./prebuilds/mongodb-client-encryption-vVERSION-napi-vNAPI_VERSION-OS-ARCH.tar.gz`.
-  let prebuildOptions;
+  const gypDefines = [];
   if (process.platform === 'darwin' && args.noMacosUniversal) {
-    prebuildOptions ??= { env: { ...process.env } };
-    prebuildOptions.env.GYP_DEFINES = (prebuildOptions.env.GYP_DEFINES ?? '') + 'no_macos_universal=true '
+    gypDefines.push({ no_macos_universal: true });
   }
 
   if (args.dynamic) {
-    prebuildOptions ??= { env: { ...process.env } }
-    prebuildOptions.env.GYP_DEFINES = (prebuildOptions.env.GYP_DEFINES ?? '') + 'build_type=dynamic '
+    gypDefines.push({ build_type: 'dynamic' });
   }
+
+  const prebuildOptions =
+    gypDefines.length > 0
+      ? { env: { ...process.env, GYP_DEFINES: toDefines(gypDefines) } }
+      : undefined;
 
   await run('npm', ['run', 'prebuild'], prebuildOptions);
   // Compile Typescript
