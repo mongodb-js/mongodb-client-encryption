@@ -1,13 +1,13 @@
 {
   'targets': [{
     'target_name': 'mongocrypt',
+    'type': 'loadable_module',
     'include_dirs': [
         "<!(node -p \"require('node-addon-api').include_dir\")",
     ],
     'variables': {
       'ARCH': '<(host_arch)',
-      'no_macos_universal%': 'false',
-      'build_type%': 'static',
+      'libmongocrypt_link_type%': 'static',
     },
     'sources': [
       'addon/mongocrypt.cc'
@@ -16,6 +16,7 @@
       'GCC_ENABLE_CPP_EXCEPTIONS': 'YES',
       'CLANG_CXX_LIBRARY': 'libc++',
       'MACOSX_DEPLOYMENT_TARGET': '10.12',
+      'GCC_SYMBOLS_PRIVATE_EXTERN': 'YES', # -fvisibility=hidden
     },
     'cflags!': [ '-fno-exceptions' ],
     'cflags_cc!': [ '-fno-exceptions' ],
@@ -23,13 +24,8 @@
       'VCCLCompilerTool': { 'ExceptionHandling': 1 },
     },
     'conditions': [
-      ['OS=="mac"', {
-          'cflags+': ['-fvisibility=hidden'],
-          'xcode_settings': {
-            'GCC_SYMBOLS_PRIVATE_EXTERN': 'YES', # -fvisibility=hidden
-          }
-      }],
-      ['OS=="mac" and ARCH=="arm64" and "<(no_macos_universal)"!="true"', {
+      ['OS=="mac"', { 'cflags+': ['-fvisibility=hidden'] }],
+      ['_type!="static_library"', {
           'xcode_settings': {
             "OTHER_CFLAGS": [
               "-arch x86_64",
@@ -41,14 +37,10 @@
             ]
           }
       }],
-      ['build_type=="dynamic"', {
-        'link_settings': {
-          'libraries': [
-            '-lmongocrypt'
-          ]
-        }
+      ['libmongocrypt_link_type=="dynamic"', {
+        'link_settings': { 'libraries': ['-lmongocrypt'] }
       }],
-      ['build_type!="dynamic"', {
+      ['libmongocrypt_link_type!="dynamic"', {
         'conditions': [
           ['OS!="win"', {
             'include_dirs': [

@@ -125,7 +125,7 @@ export async function buildLibMongoCrypt(libmongocryptRoot, nodeDepsRoot, option
     /**
      * Where to install libmongocrypt
      * Note that `binding.gyp` will set `./deps/include`
-     * as an include path if BUILD_TYPE=static
+     * as an include path if libmongocrypt_link_type=static
      */
     DCMAKE_INSTALL_PREFIX: nodeDepsRoot
   });
@@ -286,7 +286,7 @@ async function main() {
   }
 
   if (args.dynamic) {
-    gypDefines.push({ build_type: 'dynamic' });
+    gypDefines.push({ libmongocrypt_link_type: 'dynamic' });
   }
 
   const prebuildOptions =
