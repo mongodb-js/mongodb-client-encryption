@@ -5,6 +5,8 @@
 // This file provides native crypto hooks for OpenSSL 3 (the default since Node.js 18),
 // allowing us to skip expensive round-trips between JS and C++.
 
+#include <stdexcept>
+
 #include <openssl/crypto.h>
 #include <openssl/err.h>
 #include <openssl/evp.h>
