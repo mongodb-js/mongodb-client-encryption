@@ -1,4 +1,5 @@
-FROM ubuntu:bionic AS build
+ARG UBUNTU_VERSION=bionic
+FROM ubuntu:${UBUNTU_VERSION} AS build
 
 # Possible values: s390x, arm64, x64
 ARG NODE_VERSION=16.20.1
