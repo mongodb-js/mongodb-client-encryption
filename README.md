@@ -49,6 +49,7 @@ Can be configured to clone and build without crypto.
 --build                 Instead of downloading, clone and build libmongocrypt along with the bindings.
 --dynamic               Skips cloning or downloading libmongocrypt, runs prebuild with build_type set to "dynamic" to compile
                         a prebuild that links to a system copy of libmongocrypt.
+--skip-bindings         Skips running prebuild. Useful if only the libmongocrypt dependency is desired.
 
 Only suitable for local development:
 

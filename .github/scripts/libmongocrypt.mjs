@@ -27,6 +27,7 @@ async function parseArguments() {
     build: { short: 'b', type: 'boolean', default: false },
     dynamic: { type: 'boolean', default: false },
     fastDownload: { type: 'boolean', default: false }, // Potentially incorrect download, only for the brave and impatient
+    'skip-bindings': { type: 'boolean', default: false },
     help: { short: 'h', type: 'boolean', default: false }
   };
 
@@ -49,6 +50,7 @@ async function parseArguments() {
     clean: args.values.clean,
     build: args.values.build,
     dynamic: args.values.dynamic,
+    skipBindings: args.values['skip-bindings'],
     pkg
   };
 }
@@ -235,6 +237,38 @@ export async function downloadLibMongoCrypt(nodeDepsRoot, { ref, fastDownload })
   }
 }
 
+async function buildBindings(args, pkg) {
+  await fs.rm(resolveRoot('build'), { force: true, recursive: true });
+  await fs.rm(resolveRoot('prebuilds'), { force: true, recursive: true });
+
+  // install with "ignore-scripts" so that we don't attempt to download a prebuild
+  await run('npm', ['install', '--ignore-scripts']);
+  // The prebuild command will make both a .node file in `./build` (local and CI testing will run on current code)
+  // it will also produce `./prebuilds/mongodb-client-encryption-vVERSION-napi-vNAPI_VERSION-OS-ARCH.tar.gz`.
+
+  let gypDefines = process.env.GYP_DEFINES ?? '';
+  if (args.dynamic) {
+    gypDefines += ' libmongocrypt_link_type=dynamic';
+  }
+
+  gypDefines = gypDefines.trim();
+  const prebuildOptions =
+    gypDefines.length > 0
+      ? { env: { ...process.env, GYP_DEFINES: gypDefines } }
+      : undefined;
+
+  await run('npm', ['run', 'prebuild'], prebuildOptions);
+  // Compile Typescript
+  await run('npm', ['run', 'prepare']);
+
+  if (process.platform === 'darwin' && process.arch === 'arm64') {
+    // The "arm64" build is actually a universal binary
+    const armTar = `mongodb-client-encryption-v${pkg.version}-napi-v4-darwin-arm64.tar.gz`;
+    const x64Tar = `mongodb-client-encryption-v${pkg.version}-napi-v4-darwin-x64.tar.gz`;
+    await fs.copyFile(resolveRoot('prebuilds', armTar), resolveRoot('prebuilds', x64Tar));
+  }
+}
+
 async function main() {
   const { pkg, ...args } = await parseArguments();
   console.log(args);
@@ -266,34 +300,8 @@ async function main() {
     await downloadLibMongoCrypt(nodeDepsDir, args);
   }
 
-  await fs.rm(resolveRoot('build'), { force: true, recursive: true });
-  await fs.rm(resolveRoot('prebuilds'), { force: true, recursive: true });
-
-  // install with "ignore-scripts" so that we don't attempt to download a prebuild
-  await run('npm', ['install', '--ignore-scripts']);
-  // The prebuild command will make both a .node file in `./build` (local and CI testing will run on current code)
-  // it will also produce `./prebuilds/mongodb-client-encryption-vVERSION-napi-vNAPI_VERSION-OS-ARCH.tar.gz`.
-
-  let gypDefines = process.env.GYP_DEFINES ?? '';
-  if (args.dynamic) {
-    gypDefines += ' libmongocrypt_link_type=dynamic';
-  }
-
-  gypDefines = gypDefines.trim();
-  const prebuildOptions =
-    gypDefines.length > 0
-      ? { env: { ...process.env, GYP_DEFINES: gypDefines } }
-      : undefined;
-
-  await run('npm', ['run', 'prebuild'], prebuildOptions);
-  // Compile Typescript
-  await run('npm', ['run', 'prepare']);
-
-  if (process.platform === 'darwin' && process.arch === 'arm64') {
-    // The "arm64" build is actually a universal binary
-    const armTar = `mongodb-client-encryption-v${pkg.version}-napi-v4-darwin-arm64.tar.gz`;
-    const x64Tar = `mongodb-client-encryption-v${pkg.version}-napi-v4-darwin-x64.tar.gz`;
-    await fs.copyFile(resolveRoot('prebuilds', armTar), resolveRoot('prebuilds', x64Tar));
+  if (!args.skipBindings) {
+    await buildBindings(args, pkg);
   }
 }
 
