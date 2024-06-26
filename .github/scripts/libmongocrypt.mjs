@@ -23,7 +23,6 @@ async function parseArguments() {
   const options = {
     gitURL: { short: 'u', type: 'string', default: 'https://github.com/mongodb/libmongocrypt.git' },
     libVersion: { short: 'l', type: 'string', default: pkg['mongodb:libmongocrypt'] },
-    'no-macos-universal': { type: 'boolean', default: false },
     clean: { short: 'c', type: 'boolean', default: false },
     build: { short: 'b', type: 'boolean', default: false },
     dynamic: { type: 'boolean', default: false },
@@ -50,7 +49,6 @@ async function parseArguments() {
     clean: args.values.clean,
     build: args.values.build,
     dynamic: args.values.dynamic,
-    noMacosUniversal: args.values['no-macos-universal'],
     pkg
   };
 }
@@ -73,11 +71,6 @@ async function run(command, args = [], options = {}) {
 /** CLI flag maker: `toFlags({a: 1, b: 2})` yields `['-a=1', '-b=2']` */
 function toFlags(object) {
   return Array.from(Object.entries(object)).map(([k, v]) => `-${k}=${v}`);
-}
-
-/** GYP define maker: `toFlags({a: 1, b: 2})` yields `['a=1', 'b=2']` */
-function toDefines(object) {
-  return Array.from(Object.entries(object)).map(([k, v]) => `${k}=${v}`);
 }
 
 export async function cloneLibMongoCrypt(libmongocryptRoot, { url, ref }) {
@@ -280,25 +273,23 @@ async function main() {
   await run('npm', ['install', '--ignore-scripts']);
   // The prebuild command will make both a .node file in `./build` (local and CI testing will run on current code)
   // it will also produce `./prebuilds/mongodb-client-encryption-vVERSION-napi-vNAPI_VERSION-OS-ARCH.tar.gz`.
-  const gypDefines = [];
-  if (process.platform === 'darwin' && args.noMacosUniversal) {
-    gypDefines.push({ no_macos_universal: true });
-  }
 
+  let gypDefines = process.env.GYP_DEFINES ?? '';
   if (args.dynamic) {
-    gypDefines.push({ libmongocrypt_link_type: 'dynamic' });
+    gypDefines += ' libmongocrypt_link_type=dynamic';
   }
 
+  gypDefines = gypDefines.trim();
   const prebuildOptions =
     gypDefines.length > 0
-      ? { env: { ...process.env, GYP_DEFINES: toDefines(gypDefines) } }
+      ? { env: { ...process.env, GYP_DEFINES: gypDefines } }
       : undefined;
 
   await run('npm', ['run', 'prebuild'], prebuildOptions);
   // Compile Typescript
   await run('npm', ['run', 'prepare']);
 
-  if (process.platform === 'darwin' && !args.noMacosUniversal) {
+  if (process.platform === 'darwin' && process.arch === 'arm64') {
     // The "arm64" build is actually a universal binary
     const armTar = `mongodb-client-encryption-v${pkg.version}-napi-v4-darwin-arm64.tar.gz`;
     const x64Tar = `mongodb-client-encryption-v${pkg.version}-napi-v4-darwin-x64.tar.gz`;

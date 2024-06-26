@@ -25,7 +25,7 @@
     },
     'conditions': [
       ['OS=="mac"', { 'cflags+': ['-fvisibility=hidden'] }],
-      ['_type!="static_library"', {
+      ['_type!="static_library" and ARCH=="arm64"', {
           'xcode_settings': {
             "OTHER_CFLAGS": [
               "-arch x86_64",
@@ -40,7 +40,7 @@
       ['libmongocrypt_link_type=="dynamic"', {
         'link_settings': { 'libraries': ['-lmongocrypt'] }
       }],
-      ['libmongocrypt_link_type!="dynamic"', {
+      ['libmongocrypt_link_type=="static"', {
         'conditions': [
           ['OS!="win"', {
             'include_dirs': [
