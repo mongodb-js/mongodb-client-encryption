@@ -46,7 +46,7 @@ To verify the integrity of the downloaded package, run the following command:
 gpg --verify mongodb-client-encryption-X.Y.Z.tgz.sig mongodb-client-encryption-X.Y.Z.tgz
 ```
 
-[!Note]
+>[!Note]
 No verification is done when using npm to install the package. The contents of the Github tarball and npm's tarball are identical.
 
 To verify the native `.node` packages, follow the same steps as above using `mongodb-client-encryption-X.Y.Z-platform.tgz` and the corresponding `.sig` file.
