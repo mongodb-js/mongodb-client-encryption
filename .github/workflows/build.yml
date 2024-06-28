@@ -85,8 +85,10 @@ jobs:
     environment: release
     steps:
       - uses: actions/checkout@v4
-      - name: actions/setup
-        uses: ./.github/actions/setup
+      - name: Install Node and dependencies
+        uses: mongodb-labs/drivers-github-tools/node/setup@v2
+        with:
+          ignore_install_scripts: true
       - name: actions/sign_and_upload_package
         uses: ./.github/actions/sign_and_upload_package
         with:
