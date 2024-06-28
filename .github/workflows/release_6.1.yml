@@ -57,17 +57,6 @@ jobs:
           npm_package_name: mongodb-client-encryption
           dry_run: ${{ needs.release_please.outputs.release_created == '' }}
 
-      - name: Download the Augmented SBOM file to the release assets and s3 assets folders
-        shell: bash
-        run: |
-          set -eu
-          SILKBOMB_ENVFILE=/tmp/silkbomb-envfile
-          cat << EOF > $SILKBOMB_ENVFILE
-          SILK_CLIENT_ID=${SILKBOMB_USER}
-          SILK_CLIENT_SECRET=${SILKBOMB_KEY}
-          EOF
-          echo 'SILKBOMB_ENVFILE=$SILKBOMB_ENVFILE' >> $GITHUB_ENV
-
       - name: Copy sbom file to release assets
         shell: bash
         if: ${{ 'mongodb-client-encryption-6.1' == '' }}
