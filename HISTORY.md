@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [6.1.1-alpha](https://github.com/mongodb-js/mongodb-client-encryption/compare/v6.1.0-alpha...v6.1.1-alpha) (2024-06-28)
+
+
+### Bug Fixes
+
+* **MONGOSH-1808:** static building on intel macs and windows ([#24](https://github.com/mongodb-js/mongodb-client-encryption/issues/24)) ([f27e8e1](https://github.com/mongodb-js/mongodb-client-encryption/commit/f27e8e1d658dfa269d684d632727b5abf89ecae5))
+* **NODE-6237:** build against glibc 2.27 ([#28](https://github.com/mongodb-js/mongodb-client-encryption/issues/28)) ([1c9b74a](https://github.com/mongodb-js/mongodb-client-encryption/commit/1c9b74a2fe2d4974e0d09ab25f2e5740111bbe07))
+
 ## [6.1.0-alpha](https://github.com/mongodb-js/mongodb-client-encryption/compare/v6.0.1...v6.1.0-alpha) (2024-06-17)
 
 
