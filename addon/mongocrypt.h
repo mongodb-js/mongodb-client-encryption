@@ -19,6 +19,21 @@ extern "C" {
 
 namespace node_mongocrypt {
 
+struct CryptoHooks {
+    const char* id;
+    mongocrypt_crypto_fn aes_256_cbc_encrypt;
+    mongocrypt_crypto_fn aes_256_cbc_decrypt;
+    mongocrypt_random_fn random;
+    mongocrypt_hmac_fn hmac_sha_512;
+    mongocrypt_hmac_fn hmac_sha_256;
+    mongocrypt_hash_fn sha_256;
+    mongocrypt_crypto_fn aes_256_ctr_encrypt;
+    mongocrypt_crypto_fn aes_256_ctr_decrypt;
+    mongocrypt_crypto_fn aes_256_ecb_encrypt;
+    mongocrypt_hmac_fn sign_rsa_sha256;
+    void* ctx;
+};
+
 struct MongoCryptBinaryDeleter {
     void operator()(mongocrypt_binary_t* binary) {
         mongocrypt_binary_destroy(binary);
@@ -37,6 +52,10 @@ struct MongoCryptContextDeleter {
     }
 };
 
+namespace opensslcrypto {
+std::unique_ptr<CryptoHooks> createOpenSSLCryptoHooks();
+}
+
 class MongoCrypt : public Napi::ObjectWrap<MongoCrypt> {
    public:
     static Napi::Function Init(Napi::Env env);
@@ -51,6 +70,7 @@ class MongoCrypt : public Napi::ObjectWrap<MongoCrypt> {
 
     Napi::Value Status(const Napi::CallbackInfo& info);
     Napi::Value CryptSharedLibVersionInfo(const Napi::CallbackInfo& info);
+    Napi::Value CryptoHooksProvider(const Napi::CallbackInfo& info);
 
    private:
     friend class Napi::ObjectWrap<MongoCrypt>;
@@ -58,13 +78,15 @@ class MongoCrypt : public Napi::ObjectWrap<MongoCrypt> {
     void SetCallback(const char* name, Napi::Value fn);
 
     explicit MongoCrypt(const Napi::CallbackInfo& info);
-    bool setupCryptoHooks();
+    std::unique_ptr<CryptoHooks> createJSCryptoHooks();
+    bool installCryptoHooks();
 
     static void logHandler(mongocrypt_log_level_t level,
                            const char* message,
                            uint32_t message_len,
                            void* ctx);
 
+    std::unique_ptr<CryptoHooks> _crypto_hooks;
     std::unique_ptr<mongocrypt_t, MongoCryptDeleter> _mongo_crypt;
 };
 
