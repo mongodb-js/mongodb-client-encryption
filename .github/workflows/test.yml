@@ -5,7 +5,7 @@ on:
     branches: [main]
   workflow_dispatch: {}
 
-name: Test Node.js Matrix
+name: Test
 
 jobs:
   host_tests:
@@ -65,6 +65,7 @@ jobs:
             --build-arg="NODE_ARCH=${{ matrix.linux_arch == 'amd64' && 'x64' || matrix.linux_arch }}" \
             --build-arg="NODE_VERSION=${{ steps.get_nodejs_version.outputs.version }}" \
             --build-arg="UBUNTU_VERSION=${{ steps.get_nodejs_version.outputs.ubuntu_version }}" \
+            --build-arg="RUN_TEST=true" \
             --output type=local,dest=./prebuilds,platform-split=false \
             -f ./.github/docker/Dockerfile.glibc \
             .
