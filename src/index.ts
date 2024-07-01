@@ -2,6 +2,8 @@ import bindings = require('bindings');
 
 const mc = bindings('mongocrypt');
 
+export { cryptoCallbacks } from './crypto_callbacks';
+
 export interface MongoCryptKMSRequest {
   addResponse(response: Uint8Array): void;
   readonly status: MongoCryptStatus;
@@ -62,7 +64,7 @@ export interface MongoCrypt {
        * When true, creates a `mongocrypt_ctx_explicit_encrypt_expression` context.
        * When false, creates a `mongocrypt_ctx_explicit_encrypt`
        */
-      expressionMode: boolean;
+      expressionMode?: boolean;
     }
   ): MongoCryptContext;
   makeDecryptionContext(buffer: Uint8Array): MongoCryptContext;
