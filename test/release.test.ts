@@ -19,7 +19,13 @@ const REQUIRED_FILES = [
   'package/HISTORY.md',
   'package/README.md',
   'package/lib/index.d.ts',
-  'package/src/index.ts'
+  'package/src/index.ts',
+
+  'package/src/crypto_callbacks.ts',
+  'package/lib/crypto_callbacks.d.ts',
+  'package/lib/crypto_callbacks.d.ts.map',
+  'package/lib/crypto_callbacks.js',
+  'package/lib/crypto_callbacks.js.map'
 ];
 
 describe(`Release ${packFile}`, function () {
