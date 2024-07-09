@@ -107,7 +107,10 @@ export const MongoCrypt: MongoCryptConstructor = class MongoCrypt extends mc.Mon
   constructor(options: MongoCryptConstructorOptions) {
     // Pass in JS cryptoCallbacks implementation by default.
     // If the Node.js openssl version is supported this will be ignored.
-    super({ cryptoCallbacks, ...options });
+    super(
+      // @ts-expect-error: intentionally passing in an argument that will throw to preserve existing behavior
+      options == null || typeof options !== 'object' ? undefined : { cryptoCallbacks, ...options }
+    );
   }
 };
 
