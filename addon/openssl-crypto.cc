@@ -446,12 +446,12 @@ std::unique_ptr<CryptoHooks> createOpenSSLCryptoHooks() {
 }  // namespace opensslcrypto
 }  // namespace node_mongocrypt
 
-#else // MONGOCRYPT_AVOID_OPENSSL_CRYPTO
+#else   // MONGOCRYPT_AVOID_OPENSSL_CRYPTO
 namespace node_mongocrypt {
 namespace opensslcrypto {
 std::unique_ptr<CryptoHooks> createOpenSSLCryptoHooks() {
     return {};
 }
-}
-}
-#endif // MONGOCRYPT_AVOID_OPENSSL_CRYPTO
+}  // namespace opensslcrypto
+}  // namespace node_mongocrypt
+#endif  // MONGOCRYPT_AVOID_OPENSSL_CRYPTO
