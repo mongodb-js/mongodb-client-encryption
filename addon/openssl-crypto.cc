@@ -5,6 +5,12 @@
 // This file provides native crypto hooks for OpenSSL 3 (the default since Node.js 18),
 // allowing us to skip expensive round-trips between JS and C++.
 
+#include "mongocrypt.h"
+
+// Electron does not expose OpenSSL, so we cannot use OpenSSL
+// functions directly if we're building against Electron:
+// https://github.com/electron/electron/issues/13176
+#ifndef MONGOCRYPT_AVOID_OPENSSL_CRYPTO
 #include <openssl/crypto.h>
 #include <openssl/err.h>
 #include <openssl/evp.h>
@@ -12,8 +18,6 @@
 #include <openssl/rand.h>
 
 #include <stdexcept>
-
-#include "mongocrypt.h"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -441,3 +445,13 @@ std::unique_ptr<CryptoHooks> createOpenSSLCryptoHooks() {
 
 }  // namespace opensslcrypto
 }  // namespace node_mongocrypt
+
+#else // MONGOCRYPT_AVOID_OPENSSL_CRYPTO
+namespace node_mongocrypt {
+namespace opensslcrypto {
+std::unique_ptr<CryptoHooks> createOpenSSLCryptoHooks() {
+    return {};
+}
+}
+}
+#endif // MONGOCRYPT_AVOID_OPENSSL_CRYPTO
