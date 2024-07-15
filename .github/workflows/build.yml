@@ -68,34 +68,3 @@ jobs:
           if-no-files-found: 'error'
           retention-days: 1
           compression-level: 0
-
-  release_please:
-    needs: [host_builds, container_builds]
-    runs-on: ubuntu-latest
-    outputs:
-      release_created: ${{ steps.release.outputs.release_created }}
-    steps:
-      - id: release
-        uses: googleapis/release-please-action@v4
-
-  sign_and_upload:
-    needs: [release_please]
-    if: ${{ needs.release_please.outputs.release_created }}
-    runs-on: ubuntu-latest
-    environment: release
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install Node and dependencies
-        uses: mongodb-labs/drivers-github-tools/node/setup@v2
-        with:
-          ignore_install_scripts: true
-      - name: actions/sign_and_upload_package
-        uses: ./.github/actions/sign_and_upload_package
-        with:
-          aws_role_arn: ${{ secrets.AWS_ROLE_ARN }}
-          aws_region_name: 'us-east-1'
-          aws_secret_id: ${{ secrets.AWS_SECRET_ID }}
-          npm_package_name: 'mongodb-client-encryption'
-      - run: npm publish --provenance --tag=alpha
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
