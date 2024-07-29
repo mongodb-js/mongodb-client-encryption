@@ -76,7 +76,7 @@ export interface MongoCrypt {
        * When true, creates a `mongocrypt_ctx_explicit_encrypt_expression` context.
        * When false, creates a `mongocrypt_ctx_explicit_encrypt`
        */
-      expressionMode?: boolean;
+      expressionMode: boolean;
     }
   ): MongoCryptContext;
   makeDecryptionContext(buffer: Uint8Array): MongoCryptContext;
