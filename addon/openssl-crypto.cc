@@ -359,7 +359,7 @@ bool sign_rsa(void* unused_ctx,
 }
 
 void* opensslsym(const char* name) {
-    static struct OwnProcessDylib {
+    struct OwnProcessDylib {
         bool initialized = false;
 #ifdef _WIN32
         HMODULE lib;
@@ -386,7 +386,8 @@ void* opensslsym(const char* name) {
             return reinterpret_cast<void*>(dlsym(lib, name));
         }
 #endif
-    } dl;
+    };
+    static OwnProcessDylib dl;
     if (!dl.lib) {
         throw new std::runtime_error("Could not open process handle");
     }
