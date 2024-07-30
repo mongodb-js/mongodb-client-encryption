@@ -8,6 +8,7 @@ const packFile = `mongodb-client-encryption-${pkg.version}.tgz`;
 
 const REQUIRED_FILES = [
   'package/LICENSE',
+  'package/addon/openssl-crypto.cc',
   'package/addon/mongocrypt.cc',
   'package/binding.gyp',
   'package/addon/mongocrypt.h',
@@ -18,7 +19,13 @@ const REQUIRED_FILES = [
   'package/HISTORY.md',
   'package/README.md',
   'package/lib/index.d.ts',
-  'package/src/index.ts'
+  'package/src/index.ts',
+
+  'package/src/crypto_callbacks.ts',
+  'package/lib/crypto_callbacks.d.ts',
+  'package/lib/crypto_callbacks.d.ts.map',
+  'package/lib/crypto_callbacks.js',
+  'package/lib/crypto_callbacks.js.map'
 ];
 
 describe(`Release ${packFile}`, function () {
