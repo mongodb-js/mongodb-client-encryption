@@ -86,7 +86,7 @@ describe('Crypto hooks', () => {
 
       const mongoCryptOptions: ConstructorParameters<MongoCryptConstructor>[0] = {
         kmsProviders: BSON.serialize(kmsProviders),
-        cryptoCallbacks: spiedCallbacks,
+        cryptoCallbacks: spiedCallbacks
       };
 
       const mongoCrypt = new MongoCrypt(mongoCryptOptions);
