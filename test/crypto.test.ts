@@ -38,7 +38,8 @@ function createEncryptedDocument(mongoCrypt: MongoCrypt) {
 
   const ctx = mongoCrypt.makeExplicitEncryptionContext(BSON.serialize({ v }), {
     keyId: keyId.buffer,
-    algorithm
+    algorithm,
+    expressionMode: false
   });
 
   const getState = () => ctx.state;
@@ -85,7 +86,7 @@ describe('Crypto hooks', () => {
 
       const mongoCryptOptions: ConstructorParameters<MongoCryptConstructor>[0] = {
         kmsProviders: BSON.serialize(kmsProviders),
-        cryptoCallbacks: spiedCallbacks
+        cryptoCallbacks: spiedCallbacks,
       };
 
       const mongoCrypt = new MongoCrypt(mongoCryptOptions);
