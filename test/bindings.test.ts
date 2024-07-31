@@ -387,6 +387,20 @@ describe('MongoCryptConstructor', () => {
         ).to.be.instanceOf(MongoCryptContextCtor);
       });
     });
+
+    describe('options.expressionMode', function () {
+      it('throws if `expressionMode` is not defined', function () {
+        expect(() =>
+          mc.makeExplicitEncryptionContext(value, {
+            // minimum required arguments from libmongocrypt
+            keyId: keyId.buffer,
+            algorithm: 'Unindexed'
+          })
+        )
+          .to.throw(/option `expressionMode` is required./)
+          .to.be.instanceOf(TypeError);
+      });
+    });
   });
 });
 
