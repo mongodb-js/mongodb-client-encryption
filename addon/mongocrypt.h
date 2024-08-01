@@ -56,6 +56,8 @@ namespace opensslcrypto {
 std::unique_ptr<CryptoHooks> createOpenSSLCryptoHooks();
 }
 
+typedef bool (*ExplicitEncryptionContextInitFunction)(mongocrypt_ctx_t*, mongocrypt_binary_t*);
+
 class MongoCrypt : public Napi::ObjectWrap<MongoCrypt> {
    public:
     static Napi::Function Init(Napi::Env env);
@@ -67,6 +69,9 @@ class MongoCrypt : public Napi::ObjectWrap<MongoCrypt> {
     Napi::Value MakeExplicitDecryptionContext(const Napi::CallbackInfo& info);
     Napi::Value MakeDataKeyContext(const Napi::CallbackInfo& info);
     Napi::Value MakeRewrapManyDataKeyContext(const Napi::CallbackInfo& info);
+    Napi::Value MakeExplicitEncryptionContextInternal(ExplicitEncryptionContextInitFunction init_fn,
+                                                      const Napi::Uint8Array& value,
+                                                      const Napi::Object& options);
 
     Napi::Value Status(const Napi::CallbackInfo& info);
     Napi::Value CryptSharedLibVersionInfo(const Napi::CallbackInfo& info);

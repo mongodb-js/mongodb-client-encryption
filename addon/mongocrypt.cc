@@ -589,12 +589,28 @@ Value MongoCrypt::MakeEncryptionContext(const CallbackInfo& info) {
 }
 
 Value MongoCrypt::MakeExplicitEncryptionContext(const CallbackInfo& info) {
-    std::unique_ptr<mongocrypt_ctx_t, MongoCryptContextDeleter> context(
-        mongocrypt_ctx_new(_mongo_crypt.get()));
-
     Uint8Array valueBuffer = Uint8ArrayFromValue(info[0], "value");
 
     Object options = info.Length() > 1 ? info[1].ToObject() : Object::New(info.Env());
+
+    if (!options.Get("expressionMode").IsBoolean()) {
+        throw TypeError::New(Env(), "option `expressionMode` is required.");
+    }
+
+    bool expression_mode = options.Get("expressionMode").ToBoolean();
+    ExplicitEncryptionContextInitFunction context_init_function =
+        expression_mode ? mongocrypt_ctx_explicit_encrypt_expression_init
+                        : mongocrypt_ctx_explicit_encrypt_init;
+
+    return MakeExplicitEncryptionContextInternal(context_init_function, valueBuffer, options);
+}
+
+Value MongoCrypt::MakeExplicitEncryptionContextInternal(
+    ExplicitEncryptionContextInitFunction context_init_function,
+    const Uint8Array& valueBuffer,
+    const Object& options) {
+    std::unique_ptr<mongocrypt_ctx_t, MongoCryptContextDeleter> context(
+        mongocrypt_ctx_new(_mongo_crypt.get()));
 
     if (!options.Get("keyId").IsUndefined()) {
         Uint8Array keyId = Uint8ArrayFromValue(options["keyId"], "keyId");
@@ -658,12 +674,7 @@ Value MongoCrypt::MakeExplicitEncryptionContext(const CallbackInfo& info) {
     std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binaryValue(
         Uint8ArrayToBinary(valueBuffer));
 
-    const bool isExpressionMode = options.Get("expressionMode").ToBoolean();
-
-    const bool status =
-        isExpressionMode
-            ? mongocrypt_ctx_explicit_encrypt_expression_init(context.get(), binaryValue.get())
-            : mongocrypt_ctx_explicit_encrypt_init(context.get(), binaryValue.get());
+    const bool status = context_init_function(context.get(), binaryValue.get());
 
     if (!status) {
         throw TypeError::New(Env(), errorStringFromStatus(context.get()));
