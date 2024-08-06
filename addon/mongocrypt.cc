@@ -120,6 +120,7 @@ Function MongoCrypt::Init(Napi::Env env) {
          InstanceMethod("makeDataKeyContext", &MongoCrypt::MakeDataKeyContext),
          InstanceMethod("makeRewrapManyDataKeyContext", &MongoCrypt::MakeRewrapManyDataKeyContext),
          InstanceAccessor("status", &MongoCrypt::Status, nullptr),
+         InstanceAccessor("cryptoHooksProvider", &MongoCrypt::CryptoHooksProvider, nullptr),
          InstanceAccessor(
              "cryptSharedLibVersionInfo", &MongoCrypt::CryptSharedLibVersionInfo, nullptr),
          StaticValue("libmongocryptVersion", String::New(env, mongocrypt_version(nullptr)))});
@@ -201,7 +202,7 @@ static bool aes_256_generic_hook(MongoCrypt* mongoCrypt,
     return true;
 }
 
-bool MongoCrypt::setupCryptoHooks() {
+std::unique_ptr<CryptoHooks> MongoCrypt::createJSCryptoHooks() {
     auto aes_256_cbc_encrypt = [](void* ctx,
                                   mongocrypt_binary_t* key,
                                   mongocrypt_binary_t* iv,
@@ -398,26 +399,47 @@ bool MongoCrypt::setupCryptoHooks() {
         return true;
     };
 
+    return std::make_unique<CryptoHooks>(CryptoHooks{"js",
+                                                     aes_256_cbc_encrypt,
+                                                     aes_256_cbc_decrypt,
+                                                     random,
+                                                     hmac_sha_512,
+                                                     hmac_sha_256,
+                                                     sha_256,
+                                                     aes_256_ctr_encrypt,
+                                                     aes_256_ctr_decrypt,
+                                                     nullptr,
+                                                     sign_rsa_sha256,
+                                                     this});
+}
+
+bool MongoCrypt::installCryptoHooks() {
+    const auto& hooks = *_crypto_hooks;
     if (!mongocrypt_setopt_crypto_hooks(_mongo_crypt.get(),
-                                        aes_256_cbc_encrypt,
-                                        aes_256_cbc_decrypt,
-                                        random,
-                                        hmac_sha_512,
-                                        hmac_sha_256,
-                                        sha_256,
-                                        this)) {
+                                        hooks.aes_256_cbc_encrypt,
+                                        hooks.aes_256_cbc_decrypt,
+                                        hooks.random,
+                                        hooks.hmac_sha_512,
+                                        hooks.hmac_sha_256,
+                                        hooks.sha_256,
+                                        hooks.ctx)) {
         return false;
     }
 
     // Added after `mongocrypt_setopt_crypto_hooks`, they should be treated as the same during
     // configuration
     if (!mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5(
-            _mongo_crypt.get(), sign_rsa_sha256, this)) {
+            _mongo_crypt.get(), hooks.sign_rsa_sha256, this)) {
         return false;
     }
 
     if (!mongocrypt_setopt_aes_256_ctr(
-            _mongo_crypt.get(), aes_256_ctr_encrypt, aes_256_ctr_decrypt, this)) {
+            _mongo_crypt.get(), hooks.aes_256_ctr_encrypt, hooks.aes_256_ctr_decrypt, hooks.ctx)) {
+        return false;
+    }
+
+    if (hooks.aes_256_ecb_encrypt &&
+        !mongocrypt_setopt_aes_256_ecb(_mongo_crypt.get(), hooks.aes_256_ecb_encrypt, hooks.ctx)) {
         return false;
     }
 
@@ -472,7 +494,10 @@ MongoCrypt::MongoCrypt(const CallbackInfo& info)
         }
     }
 
-    if (options.Has("cryptoCallbacks")) {
+    if (!_crypto_hooks) {
+        _crypto_hooks = opensslcrypto::createOpenSSLCryptoHooks();
+    }
+    if (!_crypto_hooks && options.Has("cryptoCallbacks")) {
         Object cryptoCallbacks = options.Get("cryptoCallbacks").ToObject();
 
         SetCallback("aes256CbcEncryptHook", cryptoCallbacks["aes256CbcEncryptHook"]);
@@ -484,10 +509,10 @@ MongoCrypt::MongoCrypt(const CallbackInfo& info)
         SetCallback("hmacSha256Hook", cryptoCallbacks["hmacSha256Hook"]);
         SetCallback("sha256Hook", cryptoCallbacks["sha256Hook"]);
         SetCallback("signRsaSha256Hook", cryptoCallbacks["signRsaSha256Hook"]);
-
-        if (!setupCryptoHooks()) {
-            throw Error::New(Env(), "unable to configure crypto hooks");
-        }
+        _crypto_hooks = createJSCryptoHooks();
+    }
+    if (_crypto_hooks && !installCryptoHooks()) {
+        throw Error::New(Env(), "unable to configure crypto hooks");
     }
 
     if (options.Has("cryptSharedLibSearchPaths")) {
@@ -535,6 +560,12 @@ Value MongoCrypt::CryptSharedLibVersionInfo(const CallbackInfo& info) {
     return ret;
 }
 
+Value MongoCrypt::CryptoHooksProvider(const CallbackInfo& info) {
+    if (!_crypto_hooks)
+        return Env().Null();
+    return String::New(Env(), _crypto_hooks->id);
+}
+
 Value MongoCrypt::Status(const CallbackInfo& info) {
     std::unique_ptr<mongocrypt_status_t, MongoCryptStatusDeleter> status(mongocrypt_status_new());
     mongocrypt_status(_mongo_crypt.get(), status.get());
@@ -558,12 +589,28 @@ Value MongoCrypt::MakeEncryptionContext(const CallbackInfo& info) {
 }
 
 Value MongoCrypt::MakeExplicitEncryptionContext(const CallbackInfo& info) {
-    std::unique_ptr<mongocrypt_ctx_t, MongoCryptContextDeleter> context(
-        mongocrypt_ctx_new(_mongo_crypt.get()));
-
     Uint8Array valueBuffer = Uint8ArrayFromValue(info[0], "value");
 
     Object options = info.Length() > 1 ? info[1].ToObject() : Object::New(info.Env());
+
+    if (!options.Get("expressionMode").IsBoolean()) {
+        throw TypeError::New(Env(), "option `expressionMode` is required.");
+    }
+
+    bool expression_mode = options.Get("expressionMode").ToBoolean();
+    ExplicitEncryptionContextInitFunction context_init_function =
+        expression_mode ? mongocrypt_ctx_explicit_encrypt_expression_init
+                        : mongocrypt_ctx_explicit_encrypt_init;
+
+    return MakeExplicitEncryptionContextInternal(context_init_function, valueBuffer, options);
+}
+
+Value MongoCrypt::MakeExplicitEncryptionContextInternal(
+    ExplicitEncryptionContextInitFunction context_init_function,
+    const Uint8Array& valueBuffer,
+    const Object& options) {
+    std::unique_ptr<mongocrypt_ctx_t, MongoCryptContextDeleter> context(
+        mongocrypt_ctx_new(_mongo_crypt.get()));
 
     if (!options.Get("keyId").IsUndefined()) {
         Uint8Array keyId = Uint8ArrayFromValue(options["keyId"], "keyId");
@@ -627,12 +674,7 @@ Value MongoCrypt::MakeExplicitEncryptionContext(const CallbackInfo& info) {
     std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binaryValue(
         Uint8ArrayToBinary(valueBuffer));
 
-    const bool isExpressionMode = options.Get("expressionMode").ToBoolean();
-
-    const bool status =
-        isExpressionMode
-            ? mongocrypt_ctx_explicit_encrypt_expression_init(context.get(), binaryValue.get())
-            : mongocrypt_ctx_explicit_encrypt_init(context.get(), binaryValue.get());
+    const bool status = context_init_function(context.get(), binaryValue.get());
 
     if (!status) {
         throw TypeError::New(Env(), errorStringFromStatus(context.get()));

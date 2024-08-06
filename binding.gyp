@@ -8,9 +8,12 @@
     'variables': {
       'ARCH': '<(host_arch)',
       'libmongocrypt_link_type%': 'static',
+      'mongocrypt_avoid_openssl_crypto%': 'false',
+      'built_with_electron%': 0
     },
     'sources': [
-      'addon/mongocrypt.cc'
+      'addon/mongocrypt.cc',
+      'addon/openssl-crypto.cc'
     ],
     'xcode_settings': {
       'GCC_ENABLE_CPP_EXCEPTIONS': 'YES',
@@ -24,6 +27,7 @@
       'VCCLCompilerTool': { 'ExceptionHandling': 1 },
     },
     'conditions': [
+      ['mongocrypt_avoid_openssl_crypto=="true" or built_with_electron==1', { 'defines': ['MONGOCRYPT_AVOID_OPENSSL_CRYPTO'] }],
       ['OS=="mac"', { 'cflags+': ['-fvisibility=hidden'] }],
       ['_type!="static_library" and ARCH=="arm64"', {
           'xcode_settings': {

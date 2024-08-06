@@ -1,6 +1,18 @@
-import bindings = require('bindings');
+import { cryptoCallbacks } from './crypto_callbacks';
+export { cryptoCallbacks };
 
-const mc = bindings('mongocrypt');
+import bindings = require('bindings');
+const mc: MongoCryptBindings = bindings('mongocrypt');
+
+/**
+ * The value returned by the native bindings
+ * reference the `Init(Env env, Object exports)` function in the c++
+ */
+type MongoCryptBindings = {
+  MongoCrypt: MongoCryptConstructor;
+  MongoCryptContextCtor: MongoCryptContextCtor;
+  MongoCryptKMSRequestCtor: MongoCryptKMSRequest;
+};
 
 export interface MongoCryptKMSRequest {
   addResponse(response: Uint8Array): void;
@@ -30,17 +42,19 @@ export interface MongoCryptContext {
   readonly state: number;
 }
 
+type MongoCryptConstructorOptions = {
+  kmsProviders?: Uint8Array;
+  schemaMap?: Uint8Array;
+  encryptedFieldsMap?: Uint8Array;
+  logger?: unknown;
+  cryptoCallbacks?: Record<string, unknown>;
+  cryptSharedLibSearchPaths?: string[];
+  cryptSharedLibPath?: string;
+  bypassQueryAnalysis?: boolean;
+};
+
 export interface MongoCryptConstructor {
-  new (options: {
-    kmsProviders?: Uint8Array;
-    schemaMap?: Uint8Array;
-    encryptedFieldsMap?: Uint8Array;
-    logger?: unknown;
-    cryptoCallbacks?: Record<string, unknown>;
-    cryptSharedLibSearchPaths?: string[];
-    cryptSharedLibPath?: string;
-    bypassQueryAnalysis?: boolean;
-  }): MongoCrypt;
+  new (options: MongoCryptConstructorOptions): MongoCrypt;
   libmongocryptVersion: string;
 }
 
@@ -80,6 +94,7 @@ export interface MongoCrypt {
     version: bigint;
     versionStr: string;
   } | null;
+  readonly cryptoHooksProvider: 'js' | 'native_openssl' | null;
 }
 
 export type ExplicitEncryptionContextOptions = NonNullable<
@@ -88,7 +103,16 @@ export type ExplicitEncryptionContextOptions = NonNullable<
 export type DataKeyContextOptions = NonNullable<Parameters<MongoCrypt['makeDataKeyContext']>[1]>;
 export type MongoCryptOptions = NonNullable<ConstructorParameters<MongoCryptConstructor>[0]>;
 
-export const MongoCrypt: MongoCryptConstructor = mc.MongoCrypt;
+export const MongoCrypt: MongoCryptConstructor = class MongoCrypt extends mc.MongoCrypt {
+  constructor(options: MongoCryptConstructorOptions) {
+    // Pass in JS cryptoCallbacks implementation by default.
+    // If the Node.js openssl version is supported this will be ignored.
+    super(
+      // @ts-expect-error: intentionally passing in an argument that will throw to preserve existing behavior
+      options == null || typeof options !== 'object' ? undefined : { cryptoCallbacks, ...options }
+    );
+  }
+};
 
 /** exported for testing only. */
 interface MongoCryptContextCtor {
