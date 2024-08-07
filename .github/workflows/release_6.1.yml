@@ -1,6 +1,6 @@
 on:
   push:
-    branches: ["6.1"]
+    branches: ["main"]
   workflow_dispatch: {}
 
 permissions:
@@ -8,7 +8,7 @@ permissions:
   pull-requests: write
   id-token: write
 
-name: release-6.1
+name: release
 
 jobs:
   release_please:
@@ -19,7 +19,7 @@ jobs:
       - id: release
         uses: googleapis/release-please-action@v4
         with:
-          target-branch: 6.1
+          target-branch: main
 
   build:
     needs: [release_please]
@@ -76,7 +76,7 @@ jobs:
         with:
           release_version: ${{ env.package_version }}
           product_name: mongodb-client-encryption
-          sarif_report_target_ref: 6.1
+          sarif_report_target_ref: main
           third_party_dependency_tool: n/a
           dist_filenames: artifacts/*
           token: ${{ github.token }}
