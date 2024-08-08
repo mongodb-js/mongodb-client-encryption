@@ -410,7 +410,7 @@ describe('MongoCryptContext', () => {
     context = new MongoCrypt({
       kmsProviders: serialize({ aws: {} })
     }).makeDecryptionContext(serialize({}));
-  })
+  });
 
   for (const property of ['status', 'state']) {
     it(`it has a property .${property}`, () => {
