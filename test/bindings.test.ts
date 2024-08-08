@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { MongoCrypt, MongoCryptContextCtor } from '../src';
+import { MongoCrypt, MongoCryptContext, MongoCryptContextCtor } from '../src';
 import { serialize, Binary, Long } from 'bson';
 import * as crypto from 'crypto';
 
@@ -405,9 +405,12 @@ describe('MongoCryptConstructor', () => {
 });
 
 describe('MongoCryptContext', () => {
-  const context = new MongoCrypt({
-    kmsProviders: serialize({ aws: {} })
-  }).makeDecryptionContext(serialize({}));
+  let context: MongoCryptContext;
+  beforeEach(() => {
+    context = new MongoCrypt({
+      kmsProviders: serialize({ aws: {} })
+    }).makeDecryptionContext(serialize({}));
+  })
 
   for (const property of ['status', 'state']) {
     it(`it has a property .${property}`, () => {
