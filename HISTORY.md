@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [6.2.0-alpha](https://github.com/mongodb-js/mongodb-client-encryption/compare/v6.1.0-alpha...v6.2.0-alpha) (2024-08-13)
+
+
+### Features
+
+* **NODE-5875:** provide native crypto hooks for OpenSSL 3 ([#25](https://github.com/mongodb-js/mongodb-client-encryption/issues/25)) ([38f1be6](https://github.com/mongodb-js/mongodb-client-encryption/commit/38f1be60e3f8d24b066642f742c90d0ffdd0cdc0))
+* **NODE-6307:** use libmongocrypt 1.11.0 ([#38](https://github.com/mongodb-js/mongodb-client-encryption/issues/38)) ([bc85202](https://github.com/mongodb-js/mongodb-client-encryption/commit/bc852020441dbc8ec2d02dd9eb7c9711a598eec4))
+
+
+### Bug Fixes
+
+* **MONGOSH-1808:** static building on intel macs and windows ([#24](https://github.com/mongodb-js/mongodb-client-encryption/issues/24)) ([f27e8e1](https://github.com/mongodb-js/mongodb-client-encryption/commit/f27e8e1d658dfa269d684d632727b5abf89ecae5))
+* **NODE-6237:** build against glibc 2.27 ([#28](https://github.com/mongodb-js/mongodb-client-encryption/issues/28)) ([1c9b74a](https://github.com/mongodb-js/mongodb-client-encryption/commit/1c9b74a2fe2d4974e0d09ab25f2e5740111bbe07))
+* **NODE-6300:** make expressionMode required in C++ in makeExplicitEncryptionContext ([#37](https://github.com/mongodb-js/mongodb-client-encryption/issues/37)) ([5552f9f](https://github.com/mongodb-js/mongodb-client-encryption/commit/5552f9f1a59caa3da11dd71dbc7b093451d99266))
+
 ## [6.1.0-alpha](https://github.com/mongodb-js/mongodb-client-encryption/compare/v6.0.1...v6.1.0-alpha) (2024-06-17)
 
 
