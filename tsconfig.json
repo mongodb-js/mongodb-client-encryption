@@ -9,7 +9,7 @@
     "moduleResolution": "node",
     "skipLibCheck": true,
     "lib": [
-      "es2020"
+      "es2020", "es2021.WeakRef"
     ],
     // We don't make use of tslib helpers, all syntax used is supported by target engine
     "importHelpers": false,

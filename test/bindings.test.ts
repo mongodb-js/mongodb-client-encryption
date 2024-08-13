@@ -406,10 +406,15 @@ describe('MongoCryptConstructor', () => {
 
 describe('MongoCryptContext', () => {
   let context: MongoCryptContext;
+  let weakMongoCryptRef: WeakRef<MongoCrypt>;
+
   beforeEach(() => {
-    context = new MongoCrypt({
+    let crypt = new MongoCrypt({
       kmsProviders: serialize({ aws: {} })
-    }).makeDecryptionContext(serialize({}));
+    });
+    context = crypt.makeDecryptionContext(serialize({}));
+    weakMongoCryptRef = new WeakRef(crypt);
+    crypt = null;
   });
 
   for (const property of ['status', 'state']) {
@@ -443,6 +448,16 @@ describe('MongoCryptContext', () => {
       expect(() =>
         context.addMongoOperationResponse(new Uint8Array(Buffer.from([1, 2, 3])))
       ).not.to.throw();
+    });
+
+    it('can be called with multiple Uint8Arrays and intermittent GC', () => {
+      for (let i = 0; i < 20; i++) {
+        globalThis.gc();
+        expect(() =>
+          context.addMongoOperationResponse(new Uint8Array(Buffer.from([1, 2, 3])))
+        ).not.to.throw();
+      }
+      expect(weakMongoCryptRef.deref()).to.equal(undefined);
     });
   });
 });

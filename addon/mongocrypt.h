@@ -62,7 +62,15 @@ class MongoCrypt : public Napi::ObjectWrap<MongoCrypt> {
    public:
     static Napi::Function Init(Napi::Env env);
 
+    struct State {
+        std::unique_ptr<CryptoHooks> crypto_hooks;
+        std::unique_ptr<mongocrypt_t, MongoCryptDeleter> mongo_crypt;
+        MongoCrypt* js_wrapper;
+    };
+
    private:
+    ~MongoCrypt();
+
     Napi::Value MakeEncryptionContext(const Napi::CallbackInfo& info);
     Napi::Value MakeExplicitEncryptionContext(const Napi::CallbackInfo& info);
     Napi::Value MakeDecryptionContext(const Napi::CallbackInfo& info);
@@ -91,15 +99,24 @@ class MongoCrypt : public Napi::ObjectWrap<MongoCrypt> {
                            uint32_t message_len,
                            void* ctx);
 
-    std::unique_ptr<CryptoHooks> _crypto_hooks;
-    std::unique_ptr<mongocrypt_t, MongoCryptDeleter> _mongo_crypt;
+    mongocrypt_t* mongo_crypt();  // shorthand for _state->mongo_crypt.get()
+
+    std::shared_ptr<State> _state = std::make_shared<State>();
 };
 
 class MongoCryptContext : public Napi::ObjectWrap<MongoCryptContext> {
    public:
     static Napi::Function Init(Napi::Env env);
     static Napi::Object NewInstance(
-        Napi::Env env, std::unique_ptr<mongocrypt_ctx_t, MongoCryptContextDeleter> context);
+        Napi::Env env,
+        std::shared_ptr<MongoCrypt::State> mongo_crypt,
+        std::unique_ptr<mongocrypt_ctx_t, MongoCryptContextDeleter> context);
+
+    struct ContextState {
+        // Keep reference to the MongoCrypt instance alive while this instance is alive
+        std::shared_ptr<MongoCrypt::State> mongo_crypt;
+        std::unique_ptr<mongocrypt_ctx_t, MongoCryptContextDeleter> context;
+    };
 
    private:
     Napi::Value NextMongoOperation(const Napi::CallbackInfo& info);
@@ -116,13 +133,17 @@ class MongoCryptContext : public Napi::ObjectWrap<MongoCryptContext> {
    private:
     friend class Napi::ObjectWrap<MongoCryptContext>;
     explicit MongoCryptContext(const Napi::CallbackInfo& info);
-    std::unique_ptr<mongocrypt_ctx_t, MongoCryptContextDeleter> _context;
+
+    mongocrypt_ctx_t* context();  // shorthand for _state->context.get()
+    std::shared_ptr<ContextState> _state = std::make_shared<ContextState>();
 };
 
 class MongoCryptKMSRequest : public Napi::ObjectWrap<MongoCryptKMSRequest> {
    public:
     static Napi::Function Init(Napi::Env env);
-    static Napi::Object NewInstance(Napi::Env env, mongocrypt_kms_ctx_t* kms_context);
+    static Napi::Object NewInstance(Napi::Env env,
+                                    std::shared_ptr<MongoCryptContext::ContextState> context_state,
+                                    mongocrypt_kms_ctx_t* kms_context);
 
    private:
     void AddResponse(const Napi::CallbackInfo& info);
@@ -136,6 +157,9 @@ class MongoCryptKMSRequest : public Napi::ObjectWrap<MongoCryptKMSRequest> {
    private:
     friend class Napi::ObjectWrap<MongoCryptKMSRequest>;
     explicit MongoCryptKMSRequest(const Napi::CallbackInfo& info);
+
+    // Keep reference to the MongoCryptContext instance alive while this instance is alive
+    std::shared_ptr<MongoCryptContext::ContextState> _context_state;
     mongocrypt_kms_ctx_t* _kms_context;
 };
 

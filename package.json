@@ -21,7 +21,7 @@
     "clang-format": "clang-format --style=file:.clang-format --Werror -i addon/*",
     "check:eslint": "ESLINT_USE_FLAT_CONFIG=false eslint src test",
     "check:clang-format": "clang-format --style=file:.clang-format --dry-run --Werror addon/*",
-    "test": "mocha test",
+    "test": "mocha --v8-expose-gc test",
     "prepare": "tsc",
     "rebuild": "node-gyp rebuild",
     "prebuild": "prebuild --runtime napi --strip --verbose --all"
