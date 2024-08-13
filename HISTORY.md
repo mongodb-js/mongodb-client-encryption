@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
-## [6.2.0-alpha](https://github.com/mongodb-js/mongodb-client-encryption/compare/v6.1.0-alpha...v6.2.0-alpha) (2024-08-13)
+## [6.1.0](https://github.com/mongodb-js/mongodb-client-encryption/compare/v6.1.0-alpha...v6.1.0) (2024-08-13)
 
 
 ### Features
