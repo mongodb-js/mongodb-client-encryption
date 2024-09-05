@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [6.1.1](https://github.com/mongodb-js/mongodb-client-encryption/compare/v6.1.0...v6.1.1) (2024-09-05)
+
+
+### Bug Fixes
+
+* **NODE-6326:** explicitly chain object lifetimes ([#42](https://github.com/mongodb-js/mongodb-client-encryption/issues/42)) ([ddb3fb8](https://github.com/mongodb-js/mongodb-client-encryption/commit/ddb3fb867df87ef6e6b1a0bbf9e9385d94a180dd))
+
 ## [6.1.0](https://github.com/mongodb-js/mongodb-client-encryption/compare/v6.1.0-alpha...v6.1.0) (2024-08-13)
 
 
