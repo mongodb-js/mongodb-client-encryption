@@ -91,7 +91,7 @@ jobs:
           docker --debug buildx build --progress=plain --no-cache \
             --platform linux/${{ matrix.linux_arch }} --output type=local,dest=./prebuilds,platform-split=false \
             --build-arg="P=${{ matrix.linux_arch == 'amd64' && 'amd64' || 'arm64v8'}}" \
-            -f ../.github/docker/Dockerfile.musl \
+            -f ./.github/docker/Dockerfile.musl \
             .
 
       # - id: upload
