@@ -88,11 +88,10 @@ jobs:
       - name: Run Buildx
         run: |
           docker buildx create --name builder --bootstrap --use
-          docker buildx build \
-            --platform linux/${{ matrix.linux_arch }} \
-            --build-arg="NODE_ARCH=${{ matrix.linux_arch == 'amd64' && 'x64' || matrix.linux_arch }}" \
-            --output type=local,dest=./prebuilds,platform-split=false \
-            -f ./.github/docker/Dockerfile.musl \
+          docker --debug buildx build --progress=plain --no-cache \
+            --platform linux/${{ matrix.linux_arch }} --output type=local,dest=./prebuilds,platform-split=false \
+            --build-arg="P=${{ matrix.linux_arch == 'amd64' && 'amd64' || 'arm64v8'}}" \
+            -f ../.github/docker/Dockerfile.musl \
             .
 
       # - id: upload

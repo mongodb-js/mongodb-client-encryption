@@ -1,6 +1,7 @@
 ARG NODE_VERSION=16.20.1
 ARG ALPINE_VERSION=3.17.2
+ARG P=amd64
 
-FROM arm64v8/node:16-alpine AS node
+FROM ${P}/node:16-alpine AS node
 
 RUN node -v
