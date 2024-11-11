@@ -7,7 +7,7 @@ ADD https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-${NODE_
 RUN mkdir -p /nodejs && tar -xzf /node-v${NODE_VERSION}-linux-${NODE_ARCH}.tar.gz --strip-components=1 -C /nodejs
 ENV PATH=$PATH:/nodejs/bin
 
-node --version
+RUN node --version
 
 # WORKDIR /mongodb-client-encryption
 # COPY . .
