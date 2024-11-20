@@ -37,6 +37,7 @@ jobs:
       matrix:
         linux_arch: [s390x, arm64, amd64]
         node: [16.x, 18.x, 20.x, 22.x]
+      fail-fast: false
     steps:
       - uses: actions/checkout@v4
 
@@ -60,7 +61,7 @@ jobs:
       - name: Run Buildx
         run: |
           docker buildx create --name builder --bootstrap --use
-          docker buildx build \
+          docker buildx build --progress=plain --no-cache \
             --platform linux/${{ matrix.linux_arch }} \
             --build-arg="NODE_ARCH=${{ matrix.linux_arch == 'amd64' && 'x64' || matrix.linux_arch }}" \
             --build-arg="NODE_VERSION=${{ steps.get_nodejs_version.outputs.version }}" \
