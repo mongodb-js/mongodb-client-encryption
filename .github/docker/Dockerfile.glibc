@@ -16,7 +16,7 @@ RUN apt-get -qq update && apt-get -qq install -y python3 build-essential && ldd 
 RUN npm run install:libmongocrypt
 
 ARG RUN_TEST
-RUN [ -n "$RUN_TEST" ] && npm run test || echo 'skipping testing!'
+RUN [ -n "$RUN_TEST" ] && npm run test
 
 FROM scratch
 

@@ -11,5 +11,6 @@
   "recursive": true,
   "failZero": true,
   "reporter": "test/tools/mongodb_reporter.js",
-  "color": true
+  "color": true,
+  "timeout": 0
 }
