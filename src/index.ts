@@ -4,10 +4,8 @@ export { cryptoCallbacks };
 
 function loadBindings(): MongoCryptBindings {
   return require(resolve(__dirname, '../build/Release/mongocrypt.node'));
-
 }
-import bindings = require('bindings');
-const mc: MongoCryptBindings = bindings('mongocrypt');
+const mc: MongoCryptBindings = loadBindings();
 
 /**
  * The value returned by the native bindings
