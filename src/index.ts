@@ -1,6 +1,11 @@
+import { resolve } from 'path';
 import { cryptoCallbacks } from './crypto_callbacks';
 export { cryptoCallbacks };
 
+function loadBindings(): MongoCryptBindings {
+  return require(resolve(__dirname, '../build/Release/mongocrypt.node'));
+
+}
 import bindings = require('bindings');
 const mc: MongoCryptBindings = bindings('mongocrypt');
 
@@ -54,7 +59,7 @@ type MongoCryptConstructorOptions = {
 };
 
 export interface MongoCryptConstructor {
-  new (options: MongoCryptConstructorOptions): MongoCrypt;
+  new(options: MongoCryptConstructorOptions): MongoCrypt;
   libmongocryptVersion: string;
 }
 
@@ -116,6 +121,6 @@ export const MongoCrypt: MongoCryptConstructor = class MongoCrypt extends mc.Mon
 
 /** exported for testing only. */
 interface MongoCryptContextCtor {
-  new (): MongoCryptContext;
+  new(): MongoCryptContext;
 }
 export const MongoCryptContextCtor: MongoCryptContextCtor = mc.MongoCryptContextCtor;
