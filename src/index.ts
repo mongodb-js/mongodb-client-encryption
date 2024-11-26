@@ -1,8 +1,11 @@
+import { resolve } from 'path';
 import { cryptoCallbacks } from './crypto_callbacks';
 export { cryptoCallbacks };
 
-import bindings = require('bindings');
-const mc: MongoCryptBindings = bindings('mongocrypt');
+function loadBindings(): MongoCryptBindings {
+  return require(resolve(__dirname, '../build/Release/mongocrypt.node'));
+}
+const mc: MongoCryptBindings = loadBindings();
 
 /**
  * The value returned by the native bindings
