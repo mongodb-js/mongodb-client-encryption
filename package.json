@@ -17,7 +17,7 @@
   },
   "scripts": {
     "install:libmongocrypt": "node .github/scripts/libmongocrypt.mjs",
-    "install": "prebuild-install --runtime napi || node-gyp rebuild",
+    "install": "prebuild-install --download --runtime napi || node-gyp rebuild",
     "clang-format": "clang-format --style=file:.clang-format --Werror -i addon/*",
     "check:eslint": "ESLINT_USE_FLAT_CONFIG=false eslint src test",
     "check:clang-format": "clang-format --style=file:.clang-format --dry-run --Werror addon/*",

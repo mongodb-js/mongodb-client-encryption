@@ -24,7 +24,7 @@ jobs:
           registry-url: "https://registry.npmjs.org"
 
       - name: Build with Node.js ${{ matrix.node }} on ${{ matrix.os }}
-        run: node .github/scripts/libmongocrypt.mjs ${{ runner.os == 'Windows' && '--build' || '' }}
+        run: npm i --ddd
         shell: bash
 
       - name: Test ${{ matrix.os }}
