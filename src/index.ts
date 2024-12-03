@@ -1,8 +1,15 @@
 import { cryptoCallbacks } from './crypto_callbacks';
 export { cryptoCallbacks };
 
-import bindings = require('bindings');
-const mc: MongoCryptBindings = bindings('mongocrypt');
+function load() {
+  try {
+    return require('../build/Release/mongocrypt.node');
+  } catch {
+    return require('../build/Debug/mongocrypt.node');
+  }
+}
+
+const mc: MongoCryptBindings = load();
 
 /**
  * The value returned by the native bindings
