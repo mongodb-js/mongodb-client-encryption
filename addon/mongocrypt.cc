@@ -575,6 +575,8 @@ MongoCrypt::MongoCrypt(const CallbackInfo& info) : ObjectWrap(info) {
 
     mongocrypt_setopt_use_need_kms_credentials_state(mongo_crypt());
 
+    mongocrypt_setopt_retry_kms(mongo_crypt(), true);
+
     // Initialize after all options are set.
     if (!mongocrypt_init(mongo_crypt())) {
         throw TypeError::New(Env(), errorStringFromStatus(mongo_crypt()));
@@ -947,6 +949,8 @@ Function MongoCryptKMSRequest::Init(Napi::Env env) {
         {InstanceMethod("addResponse", &MongoCryptKMSRequest::AddResponse),
          InstanceAccessor("status", &MongoCryptKMSRequest::Status, nullptr),
          InstanceAccessor("bytesNeeded", &MongoCryptKMSRequest::BytesNeeded, nullptr),
+         InstanceAccessor("uSleep", &MongoCryptKMSRequest::USleep, nullptr),
+         InstanceAccessor("fail", &MongoCryptKMSRequest::Fail, nullptr),
          InstanceAccessor("kmsProvider", &MongoCryptKMSRequest::KMSProvider, nullptr),
          InstanceAccessor("endpoint", &MongoCryptKMSRequest::Endpoint, nullptr),
          InstanceAccessor("message", &MongoCryptKMSRequest::Message, nullptr)});
@@ -975,6 +979,14 @@ Value MongoCryptKMSRequest::Status(const CallbackInfo& info) {
 
 Value MongoCryptKMSRequest::BytesNeeded(const CallbackInfo& info) {
     return Number::New(Env(), mongocrypt_kms_ctx_bytes_needed(_kms_context));
+}
+
+Value MongoCryptKMSRequest::USleep(const CallbackInfo& info) {
+    return Number::New(Env(), mongocrypt_kms_ctx_usleep(_kms_context));
+}
+
+Value MongoCryptKMSRequest::Fail(const CallbackInfo& info) {
+    return Boolean::New(Env(), mongocrypt_kms_ctx_fail(_kms_context));
 }
 
 Value MongoCryptKMSRequest::KMSProvider(const CallbackInfo& info) {

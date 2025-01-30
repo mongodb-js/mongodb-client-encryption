@@ -23,8 +23,10 @@ type MongoCryptBindings = {
 
 export interface MongoCryptKMSRequest {
   addResponse(response: Uint8Array): void;
+  fail(): boolean;
   readonly status: MongoCryptStatus;
   readonly bytesNeeded: number;
+  readonly uSleep: number;
   readonly kmsProvider: string;
   readonly endpoint: string;
   readonly message: Buffer;
