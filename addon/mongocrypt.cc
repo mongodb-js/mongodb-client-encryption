@@ -947,10 +947,10 @@ Function MongoCryptKMSRequest::Init(Napi::Env env) {
         env,
         "MongoCryptKMSRequest",
         {InstanceMethod("addResponse", &MongoCryptKMSRequest::AddResponse),
+         InstanceMethod("fail", &MongoCryptKMSRequest::Fail),
          InstanceAccessor("status", &MongoCryptKMSRequest::Status, nullptr),
          InstanceAccessor("bytesNeeded", &MongoCryptKMSRequest::BytesNeeded, nullptr),
          InstanceAccessor("uSleep", &MongoCryptKMSRequest::USleep, nullptr),
-         InstanceAccessor("fail", &MongoCryptKMSRequest::Fail, nullptr),
          InstanceAccessor("kmsProvider", &MongoCryptKMSRequest::KMSProvider, nullptr),
          InstanceAccessor("endpoint", &MongoCryptKMSRequest::Endpoint, nullptr),
          InstanceAccessor("message", &MongoCryptKMSRequest::Message, nullptr)});
