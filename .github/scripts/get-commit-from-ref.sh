@@ -3,7 +3,7 @@
 git clone https://github.com/mongodb/libmongocrypt.git _libmongocrypt
 cd _libmongocrypt
 
-git switch --detach $REF
+git checkout --detach $REF
 
 COMMIT_HASH=$(git rev-parse HEAD)
 
