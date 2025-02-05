@@ -35,15 +35,22 @@ export function buildLibmongocryptDownloadUrl(ref, platform) {
     // sort of a hack - if we have an official release version, it'll be in the form `major.minor`.  otherwise,
     // we'd expect a commit hash or `master`.
     if (ref.includes('.')) {
-        const [major, minor, patch] = ref.split('.');
-        if (patch !== '0') {
-            throw new Error('cannot release from non-zero patch.');
-        }
+        const [major, minor, _patch] = ref.split('.');
 
+        // Just a note: it may appear that this logic _doesn't_ support patch releases but it actually does.
+        // libmongocrypt's creates release branches for minor releases in the form `r<major>.<minor>`.  
+        // Any patches made to this branch are committed as tags in the form <major>.<minor>.<patch>.
+        // So, the branch that is used for the AWS s3 upload is `r<major>.<minor>` and the commit hash
+        // is the commit hash we parse from the `getCommitFromRef()` (which handles switching to git tags and
+        // getting the commit hash at that tag just fine).
         const branch = `r${major}.${minor}`
+
         return `https://mciuploads.s3.amazonaws.com/libmongocrypt-release/${platform}/${branch}/${hash}/libmongocrypt.tar.gz`;
     }
 
+    // just a note here - `master` refers to the branch, the hash is the commit on that branch.
+    // if we ever need to download binaries from a non-master branch (or non-release branch), 
+    // this will need to be modified somehow.
     return `https://mciuploads.s3.amazonaws.com/libmongocrypt/${platform}/master/${hash}/libmongocrypt.tar.gz`;
 }
 
