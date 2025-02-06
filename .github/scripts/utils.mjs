@@ -1,10 +1,10 @@
 // @ts-check
 
-import { execSync } from "child_process";
 import path from "path";
 import url from 'node:url';
 import { spawn } from "node:child_process";
 import { once } from "node:events";
+import { execSync } from "child_process";
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 
@@ -55,22 +55,25 @@ export function buildLibmongocryptDownloadUrl(ref, platform) {
 }
 
 export function getLibmongocryptPrebuildName() {
-    const platformMatrix = {
-        ['darwin-arm64']: 'macos',
-        ['darwin-x64']: 'macos',
-        ['linux-ppc64']: 'rhel-71-ppc64el',
-        ['linux-s390x']: 'rhel72-zseries-test',
-        ['linux-arm64']: 'ubuntu1804-arm64',
-        ['linux-x64']: 'rhel-70-64-bit',
-        ['win32-x64']: 'windows-test'
-    };
+    const prebuildIdentifierFactory = {
+        'darwin': () => 'macos',
+        'win32': () => 'windows-test',
+        'linux': () => {
+            const key = `${getLibc()}-${process.arch}`;
+            return {
+                ['musl-x64']: 'alpine-amd64-earthly',
+                ['musl-arm64']: 'alpine-arm64-earthly',
+                ['glibc-ppc64']: 'rhel-71-ppc64el',
+                ['glibc-s390x']: 'rhel72-zseries-test',
+                ['glibc-arm64']: 'ubuntu1804-arm64',
+                ['glibc-x64']: 'rhel-70-64-bit',
+            }[key]
+        }
+    }[process.platform] ?? (() => {
+        throw new Error(`Unsupported platform`);
+    });
 
-    const detectedPlatform = `${process.platform}-${process.arch}`;
-    const prebuild = platformMatrix[detectedPlatform];
-
-    if (prebuild == null) throw new Error(`Unsupported: ${detectedPlatform}`);
-
-    return prebuild;
+    return prebuildIdentifierFactory();
 }
 
 /** `xtrace` style command runner, uses spawn so that stdio is inherited */
@@ -86,4 +89,28 @@ export async function run(command, args = [], options = {}) {
     await once(proc, 'exit');
 
     if (proc.exitCode != 0) throw new Error(`CRASH(${proc.exitCode}): ${commandDetails}`);
+}
+
+/**
+ * @returns the libc (`musl` or `glibc`), if the platform is linux, otherwise null.
+ */
+function getLibc() {
+    if (process.platform !== 'linux') return null;
+
+    /**
+     * executes `ldd --version`.  on Alpine linux, `ldd` and `ldd --version` return exit code 1 and print the version
+     * info to stderr, but on other platforms, `ldd --version` prints to stdout and returns exit code 0.
+     * 
+     * So, this script works on both by return stderr if the command returns a non-zero exit code, otherwise stdout.
+     */
+    function lddVersion() {
+        try {
+            return execSync('ldd --version', { encoding: 'utf-8' });
+        } catch (error) {
+            return error.stderr;
+        }
+    }
+
+    console.error({ ldd: lddVersion() });
+    return lddVersion().includes('musl') ? 'musl' : 'glibc';
 }
