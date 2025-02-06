@@ -1,4 +1,5 @@
 #! /usr/bin/env bash
+set -o errexit
 
 git clone https://github.com/mongodb/libmongocrypt.git _libmongocrypt
 cd _libmongocrypt
