@@ -8,14 +8,7 @@ import events from 'node:events';
 import path from 'node:path';
 import https from 'node:https';
 import stream from 'node:stream/promises';
-import url from 'node:url';
-
-const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
-
-/** Resolves to the root of this repository */
-function resolveRoot(...paths) {
-  return path.resolve(__dirname, '..', '..', ...paths);
-}
+import { buildLibmongocryptDownloadUrl, getLibmongocryptPrebuildName, resolveRoot, run } from './utils.mjs';
 
 async function parseArguments() {
   const pkg = JSON.parse(await fs.readFile(resolveRoot('package.json'), 'utf8'));
@@ -26,7 +19,6 @@ async function parseArguments() {
     clean: { short: 'c', type: 'boolean', default: false },
     build: { short: 'b', type: 'boolean', default: false },
     dynamic: { type: 'boolean', default: false },
-    fastDownload: { type: 'boolean', default: false }, // Potentially incorrect download, only for the brave and impatient
     'skip-bindings': { type: 'boolean', default: false },
     help: { short: 'h', type: 'boolean', default: false }
   };
@@ -46,33 +38,12 @@ async function parseArguments() {
   return {
     url: args.values.gitURL,
     ref: args.values.libVersion,
-    fastDownload: args.values.fastDownload,
     clean: args.values.clean,
     build: args.values.build,
     dynamic: args.values.dynamic,
     skipBindings: args.values['skip-bindings'],
     pkg
   };
-}
-
-/** `xtrace` style command runner, uses spawn so that stdio is inherited */
-async function run(command, args = [], options = {}) {
-  const commandDetails = `+ ${command} ${args.join(' ')}${options.cwd ? ` (in: ${options.cwd})` : ''}`;
-  console.error(commandDetails);
-  const proc = child_process.spawn(command, args, {
-    shell: process.platform === 'win32',
-    stdio: 'inherit',
-    cwd: resolveRoot('.'),
-    ...options
-  });
-  await events.once(proc, 'exit');
-
-  if (proc.exitCode != 0) throw new Error(`CRASH(${proc.exitCode}): ${commandDetails}`);
-}
-
-/** CLI flag maker: `toFlags({a: 1, b: 2})` yields `['-a=1', '-b=2']` */
-function toFlags(object) {
-  return Array.from(Object.entries(object)).map(([k, v]) => `-${k}=${v}`);
 }
 
 export async function cloneLibMongoCrypt(libmongocryptRoot, { url, ref }) {
@@ -87,6 +58,11 @@ export async function cloneLibMongoCrypt(libmongocryptRoot, { url, ref }) {
 }
 
 export async function buildLibMongoCrypt(libmongocryptRoot, nodeDepsRoot, options) {
+  /** CLI flag maker: `toFlags({a: 1, b: 2})` yields `['-a=1', '-b=2']` */
+  function toCLIFlags(object) {
+    return Array.from(Object.entries(object)).map(([k, v]) => `-${k}=${v}`);
+  }
+
   console.error('building libmongocrypt...');
 
   const nodeBuildRoot = resolveRoot(nodeDepsRoot, 'tmp', 'libmongocrypt-build');
@@ -94,7 +70,7 @@ export async function buildLibMongoCrypt(libmongocryptRoot, nodeDepsRoot, option
   await fs.rm(nodeBuildRoot, { recursive: true, force: true });
   await fs.mkdir(nodeBuildRoot, { recursive: true });
 
-  const CMAKE_FLAGS = toFlags({
+  const CMAKE_FLAGS = toCLIFlags({
     /**
      * We provide crypto hooks from Node.js binding to openssl (so disable system crypto)
      * TODO: NODE-5455
@@ -127,12 +103,12 @@ export async function buildLibMongoCrypt(libmongocryptRoot, nodeDepsRoot, option
 
   const WINDOWS_CMAKE_FLAGS =
     process.platform === 'win32' // Windows is still called "win32" when it is 64-bit
-      ? toFlags({ Thost: 'x64', A: 'x64', DENABLE_WINDOWS_STATIC_RUNTIME: 'ON' })
+      ? toCLIFlags({ Thost: 'x64', A: 'x64', DENABLE_WINDOWS_STATIC_RUNTIME: 'ON' })
       : [];
 
   const DARWIN_CMAKE_FLAGS =
     process.platform === 'darwin' // The minimum darwin target version we want for
-      ? toFlags({ DCMAKE_OSX_DEPLOYMENT_TARGET: '10.12' })
+      ? toCLIFlags({ DCMAKE_OSX_DEPLOYMENT_TARGET: '10.12' })
       : [];
 
   const cmakeProgram = process.platform === 'win32' ? 'cmake.exe' : 'cmake';
@@ -149,11 +125,10 @@ export async function buildLibMongoCrypt(libmongocryptRoot, nodeDepsRoot, option
   });
 }
 
-export async function downloadLibMongoCrypt(nodeDepsRoot, { ref, fastDownload }) {
-  const downloadURL =
-    ref === 'latest'
-      ? 'https://mciuploads.s3.amazonaws.com/libmongocrypt/all/master/latest/libmongocrypt-all.tar.gz'
-      : `https://mciuploads.s3.amazonaws.com/libmongocrypt/all/${ref}/libmongocrypt-all.tar.gz`;
+export async function downloadLibMongoCrypt(nodeDepsRoot, { ref }) {
+  const prebuild = getLibmongocryptPrebuildName();
+
+  const downloadURL = buildLibmongocryptDownloadUrl(ref, prebuild);
 
   console.error('downloading libmongocrypt...', downloadURL);
   const destination = resolveRoot(`_libmongocrypt-${ref}`);
@@ -161,23 +136,7 @@ export async function downloadLibMongoCrypt(nodeDepsRoot, { ref, fastDownload })
   await fs.rm(destination, { recursive: true, force: true });
   await fs.mkdir(destination);
 
-  const platformMatrix = {
-    ['darwin-arm64']: 'macos',
-    ['darwin-x64']: 'macos',
-    ['linux-ppc64']: 'rhel-71-ppc64el',
-    ['linux-s390x']: 'rhel72-zseries-test',
-    ['linux-arm64']: 'ubuntu1804-arm64',
-    ['linux-x64']: 'rhel-70-64-bit',
-    ['win32-x64']: 'windows-test'
-  };
-
-  const detectedPlatform = `${process.platform}-${process.arch}`;
-  const prebuild = platformMatrix[detectedPlatform];
-  if (prebuild == null) throw new Error(`Unsupported: ${detectedPlatform}`);
-
-  console.error(`Platform: ${detectedPlatform} Prebuild: ${prebuild}`);
-
-  const downloadDestination = `${prebuild}/nocrypto`;
+  const downloadDestination = `nocrypto`;
   const unzipArgs = ['-xzv', '-C', `_libmongocrypt-${ref}`, downloadDestination];
   console.error(`+ tar ${unzipArgs.join(' ')}`);
   const unzip = child_process.spawn('tar', unzipArgs, {
@@ -190,35 +149,8 @@ export async function downloadLibMongoCrypt(nodeDepsRoot, { ref, fastDownload })
 
   const start = performance.now();
 
-  let signal;
-  if (fastDownload) {
-    /**
-     * Tar will print out each file it finds inside MEMBER (ex. macos/nocrypto)
-     * For each file it prints, we give it a deadline of 3 seconds to print the next one.
-     * If nothing prints after 3 seconds we exit early.
-     * This depends on the tar file being in order and un-tar-able in under 3sec.
-     */
-    const controller = new AbortController();
-    signal = controller.signal;
-    let firstMemberSeen = true;
-    let timeout;
-    unzip.stderr.on('data', chunk => {
-      process.stderr.write(chunk, () => {
-        if (firstMemberSeen) {
-          firstMemberSeen = false;
-          timeout = setTimeout(() => {
-            clearTimeout(timeout);
-            unzip.stderr.removeAllListeners('data');
-            controller.abort();
-          }, 3_000);
-        }
-        timeout?.refresh();
-      });
-    });
-  }
-
   try {
-    await stream.pipeline(response, unzip.stdin, { signal });
+    await stream.pipeline(response, unzip.stdin);
   } catch {
     await fs.access(path.join(`_libmongocrypt-${ref}`, downloadDestination));
   }
@@ -228,7 +160,7 @@ export async function downloadLibMongoCrypt(nodeDepsRoot, { ref, fastDownload })
   console.error(`downloaded libmongocrypt in ${(end - start) / 1000} secs...`);
 
   await fs.rm(nodeDepsRoot, { recursive: true, force: true });
-  await fs.cp(resolveRoot(destination, prebuild, 'nocrypto'), nodeDepsRoot, { recursive: true });
+  await fs.cp(resolveRoot(destination, 'nocrypto'), nodeDepsRoot, { recursive: true });
   const potentialLib64Path = path.join(nodeDepsRoot, 'lib64');
   try {
     await fs.rename(potentialLib64Path, path.join(nodeDepsRoot, 'lib'));

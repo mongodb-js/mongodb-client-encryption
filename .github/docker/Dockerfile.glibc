@@ -11,7 +11,7 @@ ENV PATH=$PATH:/nodejs/bin
 WORKDIR /mongodb-client-encryption
 COPY . .
 
-RUN apt-get -qq update && apt-get -qq install -y python3 build-essential && ldd --version
+RUN apt-get -qq update && apt-get -qq install -y python3 build-essential git && ldd --version
 
 RUN npm run install:libmongocrypt
 
