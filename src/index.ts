@@ -5,7 +5,8 @@ function load() {
   try {
     return require('../build/Release/mongocrypt.node');
   } catch {
-    console.error('Could not load the native module mongocrypt.node');
+    // eslint-disable-next-line no-console
+    console.log('Could not load the native module mongocrypt.node');
   }
 }
 
