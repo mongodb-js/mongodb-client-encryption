@@ -4,7 +4,7 @@ import * as path from 'node:path';
 import * as fs from 'node:fs';
 import * as sinon from 'sinon';
 import { EJSON, BSON, Binary } from 'bson';
-import { MongoCrypt, MongoCryptConstructor, cryptoCallbacks } from '../src';
+import { MongoCrypt, MongoCryptConstructor, cryptoCallbacks } from '../../src';
 import { expect } from 'chai';
 
 const NEED_MONGO_KEYS = 3;
@@ -23,7 +23,7 @@ const LOCAL_KEY = new Uint8Array([
 const kmsProviders = { local: { key: LOCAL_KEY } };
 const algorithm = 'AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic';
 const keyDocument = EJSON.parse(
-  fs.readFileSync(path.join(__dirname, 'benchmarks', 'keyDocument.json'), 'utf8'),
+  fs.readFileSync(path.join(__dirname, '..', 'benchmarks', 'keyDocument.json'), 'utf8'),
   {
     relaxed: false
   }
