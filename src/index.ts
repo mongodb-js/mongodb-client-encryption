@@ -5,8 +5,11 @@ function load() {
   try {
     return require('../build/Release/mongocrypt.node');
   } catch {
-    // eslint-disable-next-line no-console
-    console.log('Could not load the native module mongocrypt.node');
+    try {
+      return require('../build/Debug/mongocrypt.node');
+    } catch {
+      throw new Error('Could not load the native module mongocrypt.node');
+    }
   }
 }
 
