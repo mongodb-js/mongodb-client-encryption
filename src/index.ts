@@ -7,8 +7,8 @@ function load() {
   } catch {
     try {
       return require('../build/Debug/mongocrypt.node');
-    } catch {
-      throw new Error('Could not load the native module mongocrypt.node');
+    } catch (error) {
+      throw error;
     }
   }
 }
