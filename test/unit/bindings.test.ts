@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { MongoCrypt, MongoCryptContext, MongoCryptContextCtor } from '../src';
+import { MongoCrypt, MongoCryptContext, MongoCryptContextCtor } from '../../src';
 import { serialize, Binary, Long } from 'bson';
 import * as crypto from 'crypto';
 
