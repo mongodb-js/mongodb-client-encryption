@@ -60,6 +60,9 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+        with:
+          version: v0.18.0
+          driver-opts: image=moby/buildkit:v0.17.2
 
       - name: Run Buildx
         run: |
@@ -102,6 +105,9 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+        with:
+          version: v0.18.0
+          driver-opts: image=moby/buildkit:v0.17.2
 
       - name: Run Buildx
         run: |
