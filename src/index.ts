@@ -5,6 +5,9 @@ function load() {
   try {
     return require('../build/Release/mongocrypt.node');
   } catch {
+    // Webpack will fail when just returning the require, so we need to wrap
+    // in a try/catch and rethrow.
+    /* eslint no-useless-catch: 0 */
     try {
       return require('../build/Debug/mongocrypt.node');
     } catch (error) {
