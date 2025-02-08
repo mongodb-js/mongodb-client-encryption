@@ -123,7 +123,7 @@ jobs:
             --build-arg="NODE_VERSION=${{ steps.get_nodejs_version.outputs.version }}" \
             --output type=oci,dest=alpine-node-base,platform-split=false \
             -f ./.github/docker/Dockerfile.musl \
-            -t $ARCH-alpine-lib-base-node-$NODE_VERSION
+            -t $ARCH-alpine-lib-base-node-$NODE_VERSION \
             .
 
       - id: upload
