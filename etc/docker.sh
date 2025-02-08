@@ -13,15 +13,28 @@ NODE_VERSION=20.0.0
 SCRIPT_DIR=$(dirname ${BASH_SOURCE:-$0})
 PROJECT_DIR=$SCRIPT_DIR/..
 
+# set -o xtrace
+
 build_and_test_musl() {
     docker buildx create --name builder --bootstrap --use
 
-    docker --debug buildx build --load --progress=plain --no-cache \
-        --platform linux/$LINUX_ARCH --output=type=docker \
+    BASE_TAG=$LINUX_ARCH-alpine-base-node-$NODE_VERSION
+    docker --debug buildx build --progress=plain \
+        --platform linux/$LINUX_ARCH --output=type=oci,dest=alpine-lib-base \
         --build-arg="PLATFORM=$LINUX_ARCH" \
         --build-arg="NODE_VERSION=$NODE_VERSION" \
         --build-arg="RUN_TEST=true" \
-        -f ./.github/docker/Dockerfile.musl -t musl-zstd-base \
+        -f ./.github/docker/Dockerfile.musl -t $BASE_TAG \
+        .
+
+    cat alpine-lib-base | docker load
+
+    LIBMONGOCRYPT_TAG=$LINUX_ARCH-alpine-libmongocrypt-node-$NODE_VERSION
+    docker --debug buildx build --progress=plain --pull=false --no-cache \
+        --platform linux/$LINUX_ARCH --load \
+        --build-arg="ARCH=$LINUX_ARCH" \
+        --build-arg="NODE_VERSION=$NODE_VERSION" \
+        -f ./.github/docker/Test.dockerfile -t $LIBMONGOCRYPT_TAG \
         .
 }
 
@@ -42,5 +55,5 @@ build_and_test_glibc() {
         $PROJECT_DIR
 }
 
-build_and_test_musl
+# build_and_test_musl
 # build_and_test_glibc

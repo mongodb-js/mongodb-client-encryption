@@ -109,14 +109,29 @@ jobs:
           version: v0.18.0
           driver-opts: image=moby/buildkit:v0.17.2
 
+      - name: Init builder
+        run: docker buildx create --name builder --bootstrap --use
+
       - name: Run Buildx
         run: |
-          docker buildx create --name builder --bootstrap --use
+          ARCH=${{ matrix.linux_arch == 'arm64' && 'arm64v8' || matrix.linux_arch }}
+          NODE_VERSION=${{ steps.get_nodejs_version.outputs.version }}
+          TAG=$ARCH-alpine-lib-base-node-$NODE_VERSION
           docker --debug buildx build --progress=plain --no-cache \
             --platform linux/${{ matrix.linux_arch }} \
-            --build-arg="PLATFORM=${{ matrix.linux_arch == 'arm64' && 'arm64v8' || matrix.linux_arch }}" \
+            --build-arg="ARCH=$ARCH" \
             --build-arg="NODE_VERSION=${{ steps.get_nodejs_version.outputs.version }}" \
-            --build-arg="RUN_TEST=true" \
-            --output type=local,dest=./prebuilds,platform-split=false \
+            --output type=oci,dest=alpine-node-base,platform-split=false \
             -f ./.github/docker/Dockerfile.musl \
+            -t $ARCH-alpine-lib-base-node-$NODE_VERSION
             .
+
+      - id: upload
+        name: Upload prebuild
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.linux_arch == 'arm64' && 'arm64v8' || matrix.linux_arch }}-alpine-lib-base-node-${{ steps.get_nodejs_version.outputs.version }}
+          path: alpine-node-base
+          if-no-files-found: 'error'
+          retention-days: 30
+          compression-level: 0

@@ -1,18 +1,11 @@
-ARG PLATFORM=arm64
+ARG ARCH=arm64
 ARG NODE_VERSION=16.20.1
 
-FROM ${PLATFORM}/node:${NODE_VERSION}-alpine AS build
-
-WORKDIR /mongodb-client-encryption
-COPY . .
+FROM ${ARCH}/node:${NODE_VERSION}-alpine AS dependencies
 
 RUN apk --no-cache add make g++ libc-dev curl bash python3 py3-pip cmake git
-RUN npm run install:libmongocrypt
-RUN npm run prebuild
 
-ARG RUN_TEST
-RUN if [ -n "$RUN_TEST" ]; then npm test ; else echo "skipping tests" ; fi
-
-FROM scratch
-
-COPY --from=build /mongodb-client-encryption/prebuilds/ /
+RUN python3 --version
+RUN git --version
+RUN c++ --version
+RUN g++ --version
