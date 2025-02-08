@@ -125,6 +125,7 @@ jobs:
             -f ./.github/docker/Dockerfile.musl \
             -t $ARCH-alpine-lib-base-node-$NODE_VERSION \
             .
+          docker load --input alpine-node-base
 
       - id: upload-base-image
         name: Upload base image
@@ -138,7 +139,6 @@ jobs:
 
       - name: Build libmongocrypt
         run: |
-          docker load --input alpine-node-base
           ARCH=${{ matrix.linux_arch == 'arm64' && 'arm64v8' || matrix.linux_arch }}
           NODE_VERSION=${{ steps.get_nodejs_version.outputs.version }}
           TAG=$ARCH-alpine-libmongocrypt-base-node-$NODE_VERSION
@@ -150,7 +150,8 @@ jobs:
             -f ./.github/docker/AddLibmongocrypt.musl \
             -t $ARCH-alpine-libmongocrypt-node-$NODE_VERSION \
             .
-  
+          docker load --input alpine-libmongocrypt-base
+
       - id: upload-image-with-libmongocrypt
         name: Upload libmongocrypt
         uses: actions/upload-artifact@v4
@@ -163,7 +164,6 @@ jobs:
 
       - name: Build Prebuilds
         run: |
-          docker load --input alpine-libmongocrypt-base
           ARCH=${{ matrix.linux_arch == 'arm64' && 'arm64v8' || matrix.linux_arch }}
           NODE_VERSION=${{ steps.get_nodejs_version.outputs.version }}
           TAG=$ARCH-alpine-prebuilds-base-node-$NODE_VERSION
