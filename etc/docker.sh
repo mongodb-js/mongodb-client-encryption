@@ -19,23 +19,37 @@ build_and_test_musl() {
     docker buildx create --name builder --bootstrap --use
 
     BASE_TAG=$LINUX_ARCH-alpine-base-node-$NODE_VERSION
-    docker --debug buildx build --progress=plain \
-        --platform linux/$LINUX_ARCH --output=type=oci,dest=alpine-lib-base \
-        --build-arg="PLATFORM=$LINUX_ARCH" \
-        --build-arg="NODE_VERSION=$NODE_VERSION" \
-        --build-arg="RUN_TEST=true" \
-        -f ./.github/docker/Dockerfile.musl -t $BASE_TAG \
-        .
+    # docker --debug buildx build --progress=plain \
+    #     --platform linux/$LINUX_ARCH --output=type=oci,dest=alpine-lib-base \
+    #     --build-arg="ARCH=$LINUX_ARCH" \
+    #     --build-arg="NODE_VERSION=$NODE_VERSION" \
+    #     --build-arg="RUN_TEST=true" \
+    #     -f ./.github/docker/Dockerfile.musl -t $BASE_TAG \
+    #     .
 
-    cat alpine-lib-base | docker load
+    # cat alpine-lib-base | docker load
 
-    LIBMONGOCRYPT_TAG=$LINUX_ARCH-alpine-libmongocrypt-node-$NODE_VERSION
-    docker --debug buildx build --progress=plain --pull=false --no-cache \
-        --platform linux/$LINUX_ARCH --load \
-        --build-arg="ARCH=$LINUX_ARCH" \
-        --build-arg="NODE_VERSION=$NODE_VERSION" \
-        -f ./.github/docker/Test.dockerfile -t $LIBMONGOCRYPT_TAG \
-        .
+    # LIBMONGOCRYPT_TAG=$LINUX_ARCH-alpine-libmongocrypt-node-$NODE_VERSION
+    # docker --debug buildx build --progress=plain --pull=false \
+    #     --output=type=oci,dest=alpine-libmongocrypt \
+    #     --platform linux/$LINUX_ARCH \
+    #     --build-arg="ARCH=$LINUX_ARCH" \
+    #     --build-arg="NODE_VERSION=$NODE_VERSION" \
+    #     -f ./.github/docker/AddLibmongocrypt.dockerfile -t $LIBMONGOCRYPT_TAG \
+    #     .
+
+    # cat alpine-libmongocrypt | docker load
+
+    LIBMONGOCRYPT_TAG=$LINUX_ARCH-alpine-prebuilds-node-$NODE_VERSION
+    # docker --debug buildx build --progress=plain --pull=false \
+    #     --load \
+    #     --platform linux/$LINUX_ARCH \
+    #     --build-arg="ARCH=$LINUX_ARCH" \
+    #     --build-arg="NODE_VERSION=$NODE_VERSION" \
+    #     -f ./.github/docker/Prebuilds.dockerfile -t $LIBMONGOCRYPT_TAG \
+    #     .
+
+    docker --debug run $LIBMONGOCRYPT_TAG bash -c "npm test"
 }
 
 build_and_test_glibc() {
@@ -55,5 +69,5 @@ build_and_test_glibc() {
         $PROJECT_DIR
 }
 
-# build_and_test_musl
+build_and_test_musl
 # build_and_test_glibc

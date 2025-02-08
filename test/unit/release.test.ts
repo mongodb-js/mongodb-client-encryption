@@ -37,21 +37,20 @@ describe(`Release ${packFile}`, function () {
     }
   });
 
-  let tarFileList;
-  beforeEach(() => {
+  const tarFileSet: Set<string> = new Set();
+  before(() => {
     expect(fs.existsSync(packFile)).to.equal(false);
     cp.execSync('npm pack', { stdio: 'ignore' });
-    tarFileList = [];
     tar.list({
       file: packFile,
       sync: true,
       onentry(entry) {
-        tarFileList.push(entry.path);
+        tarFileSet.add(entry.path);
       }
     });
   });
 
-  afterEach(() => {
+  after(() => {
     if (process.arch === 'x64') {
       fs.unlinkSync(packFile);
     }
@@ -59,12 +58,12 @@ describe(`Release ${packFile}`, function () {
 
   for (const requiredFile of REQUIRED_FILES) {
     it(`should contain ${requiredFile}`, () => {
-      expect(tarFileList).to.includes(requiredFile);
+      expect(tarFileSet).to.include(requiredFile);
     });
   }
 
   it('should not have extraneous files', () => {
-    const unexpectedFileList = tarFileList.filter(f => !REQUIRED_FILES.some(r => r === f));
+    const unexpectedFileList = Array.from(tarFileSet).filter(f => !REQUIRED_FILES.some(r => r === f));
     expect(unexpectedFileList).to.have.lengthOf(0, `Extra files: ${unexpectedFileList.join(', ')}`);
   });
 });

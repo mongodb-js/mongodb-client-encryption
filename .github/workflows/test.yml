@@ -112,7 +112,7 @@ jobs:
       - name: Init builder
         run: docker buildx create --name builder --bootstrap --use
 
-      - name: Run Buildx
+      - name: Build base image
         run: |
           ARCH=${{ matrix.linux_arch == 'arm64' && 'arm64v8' || matrix.linux_arch }}
           NODE_VERSION=${{ steps.get_nodejs_version.outputs.version }}
@@ -120,18 +120,77 @@ jobs:
           docker --debug buildx build --progress=plain --no-cache \
             --platform linux/${{ matrix.linux_arch }} \
             --build-arg="ARCH=$ARCH" \
-            --build-arg="NODE_VERSION=${{ steps.get_nodejs_version.outputs.version }}" \
+            --build-arg="NODE_VERSION=$NODE_VERSION" \
             --output type=oci,dest=alpine-node-base,platform-split=false \
             -f ./.github/docker/Dockerfile.musl \
             -t $ARCH-alpine-lib-base-node-$NODE_VERSION \
             .
 
-      - id: upload
-        name: Upload prebuild
+      - id: upload-base-image
+        name: Upload base image
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.linux_arch == 'arm64' && 'arm64v8' || matrix.linux_arch }}-alpine-lib-base-node-${{ steps.get_nodejs_version.outputs.version }}
+          name: ${{ matrix.linux_arch == 'arm64' && 'arm64v8' || matrix.linux_arch }}-alpine-base-node-${{ steps.get_nodejs_version.outputs.version }}
           path: alpine-node-base
           if-no-files-found: 'error'
           retention-days: 30
           compression-level: 0
+
+      - name: Build libmongocrypt
+        run: |
+          docker load --input alpine-node-base
+          ARCH=${{ matrix.linux_arch == 'arm64' && 'arm64v8' || matrix.linux_arch }}
+          NODE_VERSION=${{ steps.get_nodejs_version.outputs.version }}
+          TAG=$ARCH-alpine-libmongocrypt-base-node-$NODE_VERSION
+          docker --debug buildx build --progress=plain --no-cache \
+            --platform linux/${{ matrix.linux_arch }} \
+            --build-arg="ARCH=$ARCH" \
+            --build-arg="NODE_VERSION=$NODE_VERSION" \
+            --output type=oci,dest=alpine-libmongocrypt-base,platform-split=false \
+            -f ./.github/docker/AddLibmongocrypt.musl \
+            -t $ARCH-alpine-libmongocrypt-node-$NODE_VERSION \
+            .
+  
+      - id: upload-image-with-libmongocrypt
+        name: Upload libmongocrypt
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.linux_arch == 'arm64' && 'arm64v8' || matrix.linux_arch }}-alpine-libmongocrypt-node-${{ steps.get_nodejs_version.outputs.version }}
+          path: alpine-libmongocrypt-base
+          if-no-files-found: 'error'
+          retention-days: 30
+          compression-level: 0
+
+      - name: Build Prebuilds
+        run: |
+          docker load --input alpine-libmongocrypt-base
+          ARCH=${{ matrix.linux_arch == 'arm64' && 'arm64v8' || matrix.linux_arch }}
+          NODE_VERSION=${{ steps.get_nodejs_version.outputs.version }}
+          TAG=$ARCH-alpine-prebuilds-base-node-$NODE_VERSION
+          docker --debug buildx build --progress=plain --no-cache \
+            --platform linux/${{ matrix.linux_arch }} \
+            --build-arg="ARCH=$ARCH" \
+            --build-arg="NODE_VERSION=$NODE_VERSION" \
+            --output type=oci,dest=alpine-prebuilds-base,platform-split=false \
+            -f ./.github/docker/Prebuilds.musl \
+            -t $ARCH-alpine-prebuilds-node-$NODE_VERSION \
+            .
+  
+      - id: upload-images-with-prebuilds
+        name: Upload libmongocrypt
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.linux_arch == 'arm64' && 'arm64v8' || matrix.linux_arch }}-alpine-prebuilds-node-${{ steps.get_nodejs_version.outputs.version }}
+          path: alpine-prebuilds-base
+          if-no-files-found: 'error'
+          retention-days: 30
+          compression-level: 0
+
+      # - name: Test
+      #   run: |
+      #     docker load --input alpine-prebuilds-base
+      #     ARCH=${{ matrix.linux_arch == 'arm64' && 'arm64v8' || matrix.linux_arch }}
+      #     NODE_VERSION=${{ steps.get_nodejs_version.outputs.version }}
+      #     TAG=$ARCH-alpine-prebuilds-base-node-$NODE_VERSION
+      #     docker run --platform linux/${{ matrix.linux_arch }} $ARCH-alpine-prebuilds-node-$NODE_VERSION bash -C "npm test"
+            
