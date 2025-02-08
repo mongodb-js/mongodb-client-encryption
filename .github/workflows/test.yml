@@ -125,7 +125,8 @@ jobs:
             -f ./.github/docker/Dockerfile.musl \
             -t $ARCH-alpine-lib-base-node-$NODE_VERSION \
             .
-          docker load --input alpine-node-base
+            
+          cat alpine-node-base | docker load
 
       - id: upload-base-image
         name: Upload base image
