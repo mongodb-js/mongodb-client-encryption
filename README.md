@@ -94,6 +94,9 @@ Below are the platforms that are available as prebuilds on each github release.
     - s390x
     - arm64
     - x64
+- Linux MUSL 1.1.20
+    - arm64
+    - x64
 - MacOS universal binary
     - x64
     - arm64

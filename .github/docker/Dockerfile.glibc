@@ -11,13 +11,11 @@ ENV PATH=$PATH:/nodejs/bin
 WORKDIR /mongodb-client-encryption
 COPY . .
 
-RUN apt-get -qq update && apt-get -qq install -y python3 build-essential git && ldd --version
+RUN apt-get -qq update && apt-get -qq install -y build-essential curl git && ldd --version
 
-RUN npm run install:libmongocrypt
-
-ARG RUN_TEST
-RUN if [ -n "$RUN_TEST" ]; then npm test ; else echo "skipping tests" ; fi
-
-FROM scratch
-
-COPY --from=build /mongodb-client-encryption/prebuilds/ /
+RUN bash install-pyenv.sh
+RUN pyenv install 3.10 && pyenv global 3.10
+RUN python --version
+RUN git --version
+RUN c++ --version
+RUN g++ --version
