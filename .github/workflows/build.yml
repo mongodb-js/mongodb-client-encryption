@@ -34,7 +34,7 @@ jobs:
           retention-days: 1
           compression-level: 0
 
-  container_builds:
+  container_builds_glibc:
     outputs:
       artifact_id: ${{ steps.upload.outputs.artifact-id }}
     runs-on: ubuntu-latest
@@ -64,8 +64,48 @@ jobs:
         name: Upload prebuild
         uses: actions/upload-artifact@v4
         with:
-          name: build-linux-${{ matrix.linux_arch }}
+          name: build-linux-glibc-${{ matrix.linux_arch }}
           path: prebuilds/
           if-no-files-found: 'error'
+          retention-days: 1
+          compression-level: 0
+
+  container_tests_musl:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        linux_arch: [amd64, arm64]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get Full Node.js Version
+        id: get_nodejs_version
+        shell: bash
+        run: |
+          echo "version=$(node --print 'process.version.slice(1)')" >> "$GITHUB_OUTPUT"
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Run Buildx
+        run: |
+          docker buildx create --name builder --bootstrap --use
+          docker --debug buildx build --progress=plain --no-cache \
+            --platform linux/${{ matrix.linux_arch }} \
+            --build-arg="PLATFORM=${{ matrix.linux_arch == 'arm64' && 'arm64v8' || matrix.linux_arch }}" \
+            --output type=local,dest=./prebuilds,platform-split=false \
+            -f ./.github/docker/Dockerfile.musl \
+            .
+      - id: upload
+        name: Upload prebuild
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-linux-musl-${{ matrix.linux_arch }}
+          path: prebuilds/
+          if-no-files-found: "error"
           retention-days: 1
           compression-level: 0
