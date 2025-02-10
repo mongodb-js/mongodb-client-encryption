@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [6.2.0](https://github.com/mongodb-js/mongodb-client-encryption/compare/v6.1.1...v6.2.0) (2025-02-10)
+
+
+### Features
+
+* **NODE-6695:** enable KMS retry protocol ([#60](https://github.com/mongodb-js/mongodb-client-encryption/issues/60)) ([d4b7ef7](https://github.com/mongodb-js/mongodb-client-encryption/commit/d4b7ef7fa7db4c8b6cd0c61570020ec0013d5a6c))
+* **NODE-6727:** Add builds on Alpine linux ([#65](https://github.com/mongodb-js/mongodb-client-encryption/issues/65)) ([f4274d7](https://github.com/mongodb-js/mongodb-client-encryption/commit/f4274d71f211711663c862a832020c38fa36ca96))
+
+
+### Bug Fixes
+
+* **NODE-6730:** allow webpack bundling ([#67](https://github.com/mongodb-js/mongodb-client-encryption/issues/67)) ([3787edd](https://github.com/mongodb-js/mongodb-client-encryption/commit/3787eddde58d631950671927c942952093006174))
+* set fail as instance method ([#62](https://github.com/mongodb-js/mongodb-client-encryption/issues/62)) ([92db995](https://github.com/mongodb-js/mongodb-client-encryption/commit/92db995edd61a4f0c1c9099c49bfeb77b589cfd4))
+
 ## [6.1.1](https://github.com/mongodb-js/mongodb-client-encryption/compare/v6.1.0...v6.1.1) (2024-12-09)
 
 
