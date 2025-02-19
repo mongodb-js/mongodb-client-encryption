@@ -577,6 +577,8 @@ MongoCrypt::MongoCrypt(const CallbackInfo& info) : ObjectWrap(info) {
 
     mongocrypt_setopt_retry_kms(mongo_crypt(), true);
 
+    mongocrypt_setopt_enable_multiple_collinfo(mongo_crypt());
+
     // Initialize after all options are set.
     if (!mongocrypt_init(mongo_crypt())) {
         throw TypeError::New(Env(), errorStringFromStatus(mongo_crypt()));
