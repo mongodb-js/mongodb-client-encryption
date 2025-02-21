@@ -67,6 +67,7 @@ type MongoCryptConstructorOptions = {
   cryptSharedLibSearchPaths?: string[];
   cryptSharedLibPath?: string;
   bypassQueryAnalysis?: boolean;
+  enableMultipleCollinfo?: boolean;
 };
 
 export interface MongoCryptConstructor {

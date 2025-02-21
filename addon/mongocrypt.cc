@@ -577,7 +577,9 @@ MongoCrypt::MongoCrypt(const CallbackInfo& info) : ObjectWrap(info) {
 
     mongocrypt_setopt_retry_kms(mongo_crypt(), true);
 
-    mongocrypt_setopt_enable_multiple_collinfo(mongo_crypt());
+    if (options.Get("enableMultipleCollinfo").ToBoolean()) {
+        mongocrypt_setopt_enable_multiple_collinfo(mongo_crypt());
+    }
 
     // Initialize after all options are set.
     if (!mongocrypt_init(mongo_crypt())) {
