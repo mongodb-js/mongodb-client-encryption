@@ -54,8 +54,8 @@ export interface MongoCryptContext {
   finishKMSRequests(): void;
   finalize(): Buffer;
 
-  readonly status: MongoCryptStatus;
-  readonly state: number;
+  get status(): MongoCryptStatus;
+  get state(): number;
 }
 
 type MongoCryptConstructorOptions = {
