@@ -8,7 +8,12 @@ import events from 'node:events';
 import path from 'node:path';
 import https from 'node:https';
 import stream from 'node:stream/promises';
-import { buildLibmongocryptDownloadUrl, getLibmongocryptPrebuildName, resolveRoot, run } from './utils.mjs';
+import {
+  buildLibmongocryptDownloadUrl,
+  getLibmongocryptPrebuildName,
+  resolveRoot,
+  run
+} from './utils.mjs';
 
 async function parseArguments() {
   const pkg = JSON.parse(await fs.readFile(resolveRoot('package.json'), 'utf8'));
@@ -72,19 +77,11 @@ export async function buildLibMongoCrypt(libmongocryptRoot, nodeDepsRoot, option
 
   const CMAKE_FLAGS = toCLIFlags({
     /**
-     * We provide crypto hooks from Node.js binding to openssl (so disable system crypto)
-     * TODO: NODE-5455
+     * We provide crypto hooks from Node.js binding to openssl (so disable **system** crypto)
      *
-     * One thing that is not obvious from the build instructions for libmongocrypt
-     * and the Node.js bindings is that the Node.js driver uses libmongocrypt in
-     * DISABLE_NATIVE_CRYPTO aka nocrypto mode, that is, instead of using native
-     * system libraries for crypto operations, it provides callbacks to libmongocrypt
-     * which, in the Node.js addon case, call JS functions that in turn call built-in
-     * Node.js crypto methods.
-     *
-     * That’s way more convoluted than it needs to be, considering that we always
-     * have a copy of OpenSSL available directly, but for now it seems to make sense
-     * to stick with what the Node.js addon does here.
+     * Node.js ships with openssl statically compiled into the runtime.
+     * We provide hooks to libmongocrypt that uses Node.js copy of openssl
+     * instead of the operating system's copy so we build without linking to the system crypto.
      */
     DDISABLE_NATIVE_CRYPTO: '1',
     /** A consistent name for the output "library" directory */
@@ -185,9 +182,7 @@ async function buildBindings(args, pkg) {
 
   gypDefines = gypDefines.trim();
   const prebuildOptions =
-    gypDefines.length > 0
-      ? { env: { ...process.env, GYP_DEFINES: gypDefines } }
-      : undefined;
+    gypDefines.length > 0 ? { env: { ...process.env, GYP_DEFINES: gypDefines } } : undefined;
 
   await run('npm', ['run', 'prebuild'], prebuildOptions);
   // Compile Typescript

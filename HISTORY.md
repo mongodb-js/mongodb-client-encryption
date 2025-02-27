@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [6.3.0](https://github.com/mongodb-js/mongodb-client-encryption/compare/v6.2.0...v6.3.0) (2025-02-27)
+
+
+### Features
+
+* **NODE-6773:** add multiple collinfo option ([#70](https://github.com/mongodb-js/mongodb-client-encryption/issues/70)) ([67dcf70](https://github.com/mongodb-js/mongodb-client-encryption/commit/67dcf70fb335e4832b0e1cae8f162448ab3e84f9))
+
 ## [6.2.0](https://github.com/mongodb-js/mongodb-client-encryption/compare/v6.1.1...v6.2.0) (2025-02-10)
 
 

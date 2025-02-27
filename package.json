@@ -1,6 +1,6 @@
 {
   "name": "mongodb-client-encryption",
-  "version": "6.2.0",
+  "version": "6.3.0",
   "description": "Official client encryption module for the MongoDB Node.js driver",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -35,7 +35,7 @@
   },
   "license": "Apache-2.0",
   "gypfile": true,
-  "mongodb:libmongocrypt": "1.12.0",
+  "mongodb:libmongocrypt": "1.13.0",
   "dependencies": {
     "node-addon-api": "^4.3.0",
     "prebuild-install": "^7.1.3"
