@@ -54,8 +54,8 @@ export interface MongoCryptContext {
   finishKMSRequests(): void;
   finalize(): Buffer;
 
-  readonly status: MongoCryptStatus;
-  readonly state: number;
+  get status(): MongoCryptStatus;
+  get state(): number;
 }
 
 type MongoCryptConstructorOptions = {
@@ -67,6 +67,8 @@ type MongoCryptConstructorOptions = {
   cryptSharedLibSearchPaths?: string[];
   cryptSharedLibPath?: string;
   bypassQueryAnalysis?: boolean;
+  /** TODO(NODE-6793): remove this option and have it always set in the next major */
+  enableMultipleCollinfo?: boolean;
 };
 
 export interface MongoCryptConstructor {
