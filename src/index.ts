@@ -67,6 +67,7 @@ type MongoCryptConstructorOptions = {
   cryptSharedLibSearchPaths?: string[];
   cryptSharedLibPath?: string;
   bypassQueryAnalysis?: boolean;
+  /** TODO(NODE-6793): remove this option and have it always set in the next major */
   enableMultipleCollinfo?: boolean;
 };
 
