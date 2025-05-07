@@ -110,7 +110,7 @@ describe('MongoCryptConstructor', () => {
       it('throws an error', () => {
         expect(() => {
           new MongoCrypt({ kmsProviders: serialize({ aws: {} }), keyExpirationMS: -1000000 });
-        }).to.throw(TypeError);
+        }).to.throw(/must be a non-negative number/);
       });
     });
   });
