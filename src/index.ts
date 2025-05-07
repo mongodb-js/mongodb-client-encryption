@@ -67,6 +67,8 @@ type MongoCryptConstructorOptions = {
   cryptSharedLibSearchPaths?: string[];
   cryptSharedLibPath?: string;
   bypassQueryAnalysis?: boolean;
+  /** Configure the time to expire the DEK from the cache. */
+  keyExpirationMS: number;
   /** TODO(NODE-6793): remove this option and have it always set in the next major */
   enableMultipleCollinfo?: boolean;
 };
