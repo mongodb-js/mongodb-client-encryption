@@ -572,8 +572,8 @@ MongoCrypt::MongoCrypt(const CallbackInfo& info) : ObjectWrap(info) {
     }
 
     if (options.Has("keyExpirationMS")) {
-        mongocrypt_setopt_key_expiration(
-            mongo_crypt(), options.Get("keyExpirationMS").ToNumber().Int64Value());
+        mongocrypt_setopt_key_expiration(mongo_crypt(),
+                                         options.Get("keyExpirationMS").ToNumber().Int64Value());
     }
 
     mongocrypt_setopt_use_range_v2(mongo_crypt());
