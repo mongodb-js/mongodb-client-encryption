@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [6.4.0](https://github.com/mongodb-js/mongodb-client-encryption/compare/v6.3.0...v6.4.0) (2025-05-08)
+
+
+### Features
+
+* **NODE-6947:** add keyExpirationMS to bindings ([#78](https://github.com/mongodb-js/mongodb-client-encryption/issues/78)) ([d0fcc4b](https://github.com/mongodb-js/mongodb-client-encryption/commit/d0fcc4b4eb2948b731b4b9089daa49e44062740a))
+
 ## [6.3.0](https://github.com/mongodb-js/mongodb-client-encryption/compare/v6.2.0...v6.3.0) (2025-02-27)
 
 
