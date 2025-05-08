@@ -97,6 +97,24 @@ describe('MongoCryptConstructor', () => {
     });
   });
 
+  describe('options.keyExpirationMS', () => {
+    context('when the number is positive', () => {
+      it('does not error', () => {
+        expect(
+          new MongoCrypt({ kmsProviders: serialize({ aws: {} }), keyExpirationMS: 1000000 })
+        ).to.be.instanceOf(MongoCrypt);
+      });
+    });
+
+    context('when the number is negative', () => {
+      it('throws an error', () => {
+        expect(() => {
+          new MongoCrypt({ kmsProviders: serialize({ aws: {} }), keyExpirationMS: -1000000 });
+        }).to.throw(/must be a non-negative number/);
+      });
+    });
+  });
+
   describe('options.encryptedFieldsMap', () => {
     it('throws when provided and not a Uint8Array', () => {
       expect(
