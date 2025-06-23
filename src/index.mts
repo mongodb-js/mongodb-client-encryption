@@ -1,7 +1,9 @@
-import { cryptoCallbacks } from './crypto_callbacks';
+import { createRequire } from 'module';
+import { cryptoCallbacks } from './crypto_callbacks.mjs';
 export { cryptoCallbacks };
 
 function load() {
+  const require = createRequire(import.meta.url);
   try {
     return require('../build/Release/mongocrypt.node');
   } catch {

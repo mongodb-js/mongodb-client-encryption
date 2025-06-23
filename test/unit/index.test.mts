@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import * as bindings from '../../src/index';
+import * as bindings from '../../src/index.mjs';
 
 describe('index.ts', () => {
   it('only has three exports', () => {

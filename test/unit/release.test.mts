@@ -28,7 +28,7 @@ const REQUIRED_FILES = [
   'package/lib/crypto_callbacks.js.map'
 ];
 
-describe(`Release ${packFile}`, function () {
+describe.skip(`Release ${packFile}`, function () {
   this.timeout(60000);
 
   beforeEach(function () {

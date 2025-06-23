@@ -3,10 +3,15 @@
   "require": [
     "source-map-support/register",
     "ts-node/register",
-    "test/tools/chai-addons.js"
+    "test/tools/chai-addons.mts"
   ],
   "extension": [
-    "ts"
+    "mts"
+  ],
+  "node-option": [
+    "expose-gc",
+    "experimental-specifier-resolution=node",
+    "loader=ts-node/esm"
   ],
   "recursive": true,
   "failZero": true,
