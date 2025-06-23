@@ -5,12 +5,13 @@
     "strict": true,
     "alwaysStrict": true,
     "target": "ES2020",
-    "module": "commonJS",
+    "module": "esnext",
     "moduleResolution": "node",
     "skipLibCheck": true,
     "erasableSyntaxOnly": true,
     "lib": [
-      "es2020", "es2021.WeakRef"
+      "es2020",
+      "es2021.WeakRef"
     ],
     // We don't make use of tslib helpers, all syntax used is supported by target engine
     "importHelpers": false,

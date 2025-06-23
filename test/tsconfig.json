@@ -4,9 +4,11 @@
 		"strict": false,
 		"allowJs": false,
 		"checkJs": false,
+		"types": [
+			"mocha"
+		]
 	},
 	"include": [
-		"../node_modules/@types/mocha/index.d.ts",
-		"./**/*.ts"
+		"./**/*.mts"
 	]
 }

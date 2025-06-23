@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { MongoCrypt, MongoCryptContext, MongoCryptContextCtor } from '../../src';
+import { MongoCrypt, MongoCryptContext, MongoCryptContextCtor } from '../../src/index.mjs'
 import { serialize, Binary, Long } from 'bson';
 import * as crypto from 'crypto';
 
@@ -19,15 +19,15 @@ describe('MongoCryptConstructor', () => {
   const mc = new MongoCrypt({
     kmsProviders: serialize({ aws: {} }),
     cryptoCallbacks: {
-      aes256CbcEncryptHook: () => {},
-      aes256CbcDecryptHook: () => {},
-      aes256CtrEncryptHook: () => {},
-      aes256CtrDecryptHook: () => {},
+      aes256CbcEncryptHook: () => { },
+      aes256CbcDecryptHook: () => { },
+      aes256CtrEncryptHook: () => { },
+      aes256CtrDecryptHook: () => { },
       randomHook,
-      hmacSha512Hook: () => {},
-      hmacSha256Hook: () => {},
-      sha256Hook: () => {},
-      signRsaSha256Hook: () => {}
+      hmacSha512Hook: () => { },
+      hmacSha256Hook: () => { },
+      sha256Hook: () => { },
+      signRsaSha256Hook: () => { }
     }
   });
 
@@ -41,17 +41,17 @@ describe('MongoCryptConstructor', () => {
         kmsProviders: serialize({ aws: {} }),
         schemaMap: serialize({}),
         encryptedFieldsMap: serialize({}),
-        logger: () => {},
+        logger: () => { },
         cryptoCallbacks: {
-          aes256CbcEncryptHook: () => {},
-          aes256CbcDecryptHook: () => {},
-          aes256CtrEncryptHook: () => {},
-          aes256CtrDecryptHook: () => {},
+          aes256CbcEncryptHook: () => { },
+          aes256CbcDecryptHook: () => { },
+          aes256CtrEncryptHook: () => { },
+          aes256CtrDecryptHook: () => { },
           randomHook,
-          hmacSha512Hook: () => {},
-          hmacSha256Hook: () => {},
-          sha256Hook: () => {},
-          signRsaSha256Hook: () => {}
+          hmacSha512Hook: () => { },
+          hmacSha256Hook: () => { },
+          sha256Hook: () => { },
+          signRsaSha256Hook: () => { }
         },
 
         bypassQueryAnalysis: false
