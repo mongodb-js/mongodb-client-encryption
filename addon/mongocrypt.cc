@@ -724,6 +724,16 @@ Value MongoCrypt::MakeExplicitEncryptionContextInternal(
         }
     }
 
+    if (options.Has("textOptions")) {
+        Uint8Array textOptionsArray = Uint8ArrayFromValue(options["textOptions"], "textOptions");
+
+        std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binary(
+            Uint8ArrayToBinary(textOptionsArray));
+        if (!mongocrypt_ctx_setopt_algorithm_text(context.get(), binary.get())) {
+            throw TypeError::New(Env(), errorStringFromStatus(context.get()));
+        }
+    }
+
     std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binaryValue(
         Uint8ArrayToBinary(valueBuffer));
 

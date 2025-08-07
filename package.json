@@ -35,7 +35,7 @@
   },
   "license": "Apache-2.0",
   "gypfile": true,
-  "mongodb:libmongocrypt": "5b4691bfb964155bd1374666f0330446278708df",
+  "mongodb:libmongocrypt": "1.15.0",
   "dependencies": {
     "node-addon-api": "^4.3.0",
     "prebuild-install": "^7.1.3"
