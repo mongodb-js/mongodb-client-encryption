@@ -87,6 +87,7 @@ export interface MongoCrypt {
       keyAltName?: Uint8Array;
       algorithm?: string;
       rangeOptions?: Uint8Array;
+      textOptions?: Uint8Array;
       contentionFactor?: bigint | number;
       queryType?: string;
 
