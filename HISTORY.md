@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [6.5.0](https://github.com/mongodb-js/mongodb-client-encryption/compare/v6.4.0...v6.5.0) (2025-08-14)
+
+
+### Features
+
+* **NODE-7109:** support text searches for QE encrypted text fields ([#83](https://github.com/mongodb-js/mongodb-client-encryption/issues/83)) ([a8c2402](https://github.com/mongodb-js/mongodb-client-encryption/commit/a8c2402fd7fcf35aa69d5b4bb70b5b6d656ba7ce))
+
 ## [6.4.0](https://github.com/mongodb-js/mongodb-client-encryption/compare/v6.3.0...v6.4.0) (2025-05-08)
 
 
