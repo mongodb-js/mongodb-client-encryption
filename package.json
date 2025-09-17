@@ -80,7 +80,7 @@
   },
   "binary": {
     "napi_versions": [
-      4
+      9
     ]
   },
   "repository": {
