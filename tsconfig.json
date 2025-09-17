@@ -4,13 +4,13 @@
     "checkJs": false,
     "strict": true,
     "alwaysStrict": true,
-    "target": "ES2020",
+    "target": "ES2023",
     "module": "commonJS",
     "moduleResolution": "node",
     "skipLibCheck": true,
     "erasableSyntaxOnly": true,
     "lib": [
-      "es2020", "es2021.WeakRef"
+      "es2023"
     ],
     // We don't make use of tslib helpers, all syntax used is supported by target engine
     "importHelpers": false,
