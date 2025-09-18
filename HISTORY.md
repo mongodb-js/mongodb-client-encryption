@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [7.0.0](https://github.com/mongodb-js/mongodb-client-encryption/compare/v6.5.0...v7.0.0) (2025-09-18)
+
+
+### ⚠ BREAKING CHANGES
+
+* **NODE-7168:** increase napi version to 9 ([#93](https://github.com/mongodb-js/mongodb-client-encryption/issues/93))
+* **NODE-7170:** drop support for Nodejs <20.19.0 ([#92](https://github.com/mongodb-js/mongodb-client-encryption/issues/92))
+
+### Features
+
+* **NODE-7168:** increase napi version to 9 ([#93](https://github.com/mongodb-js/mongodb-client-encryption/issues/93)) ([be138a9](https://github.com/mongodb-js/mongodb-client-encryption/commit/be138a9022d8ae0c7fd7b8cb16561fd2f8f9db89))
+* **NODE-7170:** drop support for Nodejs &lt;20.19.0 ([#92](https://github.com/mongodb-js/mongodb-client-encryption/issues/92)) ([c46c1b9](https://github.com/mongodb-js/mongodb-client-encryption/commit/c46c1b944c97ecc8e668f87055a8df7cf533ed54))
+
 ## [6.5.0](https://github.com/mongodb-js/mongodb-client-encryption/compare/v6.4.0...v6.5.0) (2025-08-14)
 
 
