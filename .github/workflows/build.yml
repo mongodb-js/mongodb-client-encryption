@@ -79,12 +79,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Get Full Node.js Version
-        id: get_nodejs_version
-        shell: bash
-        run: |
-          echo "version=$(node --print 'process.version.slice(1)')" >> "$GITHUB_OUTPUT"
-
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
