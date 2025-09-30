@@ -38,6 +38,15 @@
     "prettier/prettier": "error",
     "no-console": "error",
     "valid-typeof": "error",
+    "@typescript-eslint/no-unused-vars": [
+      "error",
+      {
+        "argsIgnorePattern": "^_",
+        "caughtErrorsIgnorePattern": "^_",
+        "destructuredArrayIgnorePattern": "^_",
+        "varsIgnorePattern": "^_"
+      }
+    ],
     "eqeqeq": [
       "error",
       "always",

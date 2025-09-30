@@ -1,83 +1,120 @@
+import {
+  IMongoCrypt,
+  IMongoCryptContext,
+  mc,
+  MongoCryptErrorWrapper,
+  MongoCryptKMSRequest,
+  MongoCryptOptions,
+  MongoCryptStatus
+} from './bindings';
 import { cryptoCallbacks } from './crypto_callbacks';
 export { cryptoCallbacks };
 
-function load() {
-  try {
-    return require('../build/Release/mongocrypt.node');
-  } catch {
-    // Webpack will fail when just returning the require, so we need to wrap
-    // in a try/catch and rethrow.
-    /* eslint no-useless-catch: 0 */
+export class MongoCryptContext implements IMongoCryptContext {
+  private context: IMongoCryptContext;
+  private errorWrapper: MongoCryptOptions['errorWrapper'];
+
+  constructor(context: IMongoCryptContext, errorWrapper: MongoCryptOptions['errorWrapper']) {
+    this.context = context;
+    this.errorWrapper = errorWrapper;
+  }
+
+  nextMongoOperation(): Buffer {
     try {
-      return require('../build/Debug/mongocrypt.node');
+      return this.context.nextMongoOperation();
     } catch (error) {
-      throw error;
+      throw this.errorWrapper(error);
+    }
+  }
+
+  addMongoOperationResponse(response: Uint8Array): void {
+    try {
+      return this.context.addMongoOperationResponse(response);
+    } catch (error) {
+      throw this.errorWrapper(error);
+    }
+  }
+  finishMongoOperation(): void {
+    try {
+      return this.context.finishMongoOperation();
+    } catch (error) {
+      throw this.errorWrapper(error);
+    }
+  }
+  nextKMSRequest(): MongoCryptKMSRequest | null {
+    try {
+      return this.context.nextKMSRequest();
+    } catch (error) {
+      throw this.errorWrapper(error);
+    }
+  }
+  provideKMSProviders(providers: Uint8Array): void {
+    try {
+      return this.context.provideKMSProviders(providers);
+    } catch (error) {
+      throw this.errorWrapper(error);
+    }
+  }
+  finishKMSRequests(): void {
+    try {
+      return this.context.finishKMSRequests();
+    } catch (error) {
+      throw this.errorWrapper(error);
+    }
+  }
+  finalize(): Buffer {
+    try {
+      return this.context.finalize();
+    } catch (error) {
+      throw this.errorWrapper(error);
+    }
+  }
+  get status(): MongoCryptStatus {
+    try {
+      return this.context.status;
+    } catch (error) {
+      throw this.errorWrapper(error);
+    }
+  }
+  get state(): number {
+    try {
+      return this.context.state;
+    } catch (error) {
+      throw this.errorWrapper(error);
     }
   }
 }
 
-const mc: MongoCryptBindings = load();
+export class MongoCrypt implements IMongoCrypt {
+  private errorWrapper: MongoCryptErrorWrapper;
+  private mc: IMongoCrypt;
+  readonly cryptSharedLibVersionInfo: { version: bigint; versionStr: string } | null;
+  readonly cryptoHooksProvider: 'js' | 'native_openssl' | null;
 
-/**
- * The value returned by the native bindings
- * reference the `Init(Env env, Object exports)` function in the c++
- */
-type MongoCryptBindings = {
-  MongoCrypt: MongoCryptConstructor;
-  MongoCryptContextCtor: MongoCryptContextCtor;
-  MongoCryptKMSRequestCtor: MongoCryptKMSRequest;
-};
+  static readonly libmongocryptVersion: string = mc.MongoCrypt.libmongocryptVersion;
 
-export interface MongoCryptKMSRequest {
-  addResponse(response: Uint8Array): void;
-  fail(): boolean;
-  readonly status: MongoCryptStatus;
-  readonly bytesNeeded: number;
-  readonly uSleep: number;
-  readonly kmsProvider: string;
-  readonly endpoint: string;
-  readonly message: Buffer;
-}
+  constructor(options: MongoCryptOptions) {
+    // Pass in JS cryptoCallbacks implementation by default.
+    // If the Node.js openssl version is supported this will be ignored.
+    this.mc = new mc.MongoCrypt(
+      // @ts-expect-error: intentionally passing in an argument that will throw to preserve existing behavior
+      options == null || typeof options !== 'object' ? undefined : { cryptoCallbacks, ...options }
+    );
 
-export interface MongoCryptStatus {
-  type: number;
-  code: number;
-  message?: string;
-}
+    this.errorWrapper = options.errorWrapper;
 
-export interface MongoCryptContext {
-  nextMongoOperation(): Buffer;
-  addMongoOperationResponse(response: Uint8Array): void;
-  finishMongoOperation(): void;
-  nextKMSRequest(): MongoCryptKMSRequest | null;
-  provideKMSProviders(providers: Uint8Array): void;
-  finishKMSRequests(): void;
-  finalize(): Buffer;
+    this.cryptSharedLibVersionInfo = this.mc.cryptSharedLibVersionInfo;
+    this.cryptoHooksProvider = this.mc.cryptoHooksProvider;
+  }
 
-  get status(): MongoCryptStatus;
-  get state(): number;
-}
+  makeEncryptionContext(ns: string, command: Uint8Array): MongoCryptContext {
+    try {
+      return new MongoCryptContext(this.mc.makeEncryptionContext(ns, command), this.errorWrapper);
+    } catch (error) {
+      throw this.errorWrapper(error);
+    }
+  }
 
-type MongoCryptConstructorOptions = {
-  kmsProviders?: Uint8Array;
-  schemaMap?: Uint8Array;
-  encryptedFieldsMap?: Uint8Array;
-  logger?: unknown;
-  cryptoCallbacks?: Record<string, unknown>;
-  cryptSharedLibSearchPaths?: string[];
-  cryptSharedLibPath?: string;
-  bypassQueryAnalysis?: boolean;
-  /** Configure the time to expire the DEK from the cache. */
-  keyExpirationMS?: number;
-};
-
-export interface MongoCryptConstructor {
-  new (options: MongoCryptConstructorOptions): MongoCrypt;
-  libmongocryptVersion: string;
-}
-
-export interface MongoCrypt {
-  makeEncryptionContext(ns: string, command: Uint8Array): MongoCryptContext;
   makeExplicitEncryptionContext(
     value: Uint8Array,
     options?: {
@@ -97,44 +134,70 @@ export interface MongoCrypt {
        */
       expressionMode: boolean;
     }
-  ): MongoCryptContext;
-  makeDecryptionContext(buffer: Uint8Array): MongoCryptContext;
-  makeExplicitDecryptionContext(buffer: Uint8Array): MongoCryptContext;
+  ): MongoCryptContext {
+    try {
+      return new MongoCryptContext(
+        this.mc.makeExplicitEncryptionContext(value, options),
+        this.errorWrapper
+      );
+    } catch (error) {
+      throw this.errorWrapper(error);
+    }
+  }
+  makeDecryptionContext(buffer: Uint8Array): MongoCryptContext {
+    try {
+      return new MongoCryptContext(this.mc.makeDecryptionContext(buffer), this.errorWrapper);
+    } catch (error) {
+      throw this.errorWrapper(error);
+    }
+  }
+  makeExplicitDecryptionContext(buffer: Uint8Array): MongoCryptContext {
+    try {
+      return new MongoCryptContext(
+        this.mc.makeExplicitDecryptionContext(buffer),
+        this.errorWrapper
+      );
+    } catch (error) {
+      throw this.errorWrapper(error);
+    }
+  }
   makeDataKeyContext(
     optionsBuffer: Uint8Array,
     options: {
       keyAltNames?: Uint8Array[];
       keyMaterial?: Uint8Array;
     }
-  ): MongoCryptContext;
-  makeRewrapManyDataKeyContext(filter: Uint8Array, encryptionKey?: Uint8Array): MongoCryptContext;
-  readonly status: MongoCryptStatus;
-  readonly cryptSharedLibVersionInfo: {
-    version: bigint;
-    versionStr: string;
-  } | null;
-  readonly cryptoHooksProvider: 'js' | 'native_openssl' | null;
-}
-
-export type ExplicitEncryptionContextOptions = NonNullable<
-  Parameters<MongoCrypt['makeExplicitEncryptionContext']>[1]
->;
-export type DataKeyContextOptions = NonNullable<Parameters<MongoCrypt['makeDataKeyContext']>[1]>;
-export type MongoCryptOptions = NonNullable<ConstructorParameters<MongoCryptConstructor>[0]>;
-
-export const MongoCrypt: MongoCryptConstructor = class MongoCrypt extends mc.MongoCrypt {
-  constructor(options: MongoCryptConstructorOptions) {
-    // Pass in JS cryptoCallbacks implementation by default.
-    // If the Node.js openssl version is supported this will be ignored.
-    super(
-      // @ts-expect-error: intentionally passing in an argument that will throw to preserve existing behavior
-      options == null || typeof options !== 'object' ? undefined : { cryptoCallbacks, ...options }
-    );
+  ): MongoCryptContext {
+    try {
+      return new MongoCryptContext(
+        this.mc.makeDataKeyContext(optionsBuffer, options),
+        this.errorWrapper
+      );
+    } catch (error) {
+      throw this.errorWrapper(error);
+    }
   }
-};
-
-/** exported for testing only. */
-interface MongoCryptContextCtor {
-  new (): MongoCryptContext;
+  makeRewrapManyDataKeyContext(filter: Uint8Array, encryptionKey?: Uint8Array): MongoCryptContext {
+    try {
+      return new MongoCryptContext(
+        this.mc.makeRewrapManyDataKeyContext(filter, encryptionKey),
+        this.errorWrapper
+      );
+    } catch (error) {
+      throw this.errorWrapper(error);
+    }
+  }
+  get status(): MongoCryptStatus {
+    try {
+      return this.mc.status;
+    } catch (error) {
+      throw this.errorWrapper(error);
+    }
+  }
 }
-export const MongoCryptContextCtor: MongoCryptContextCtor = mc.MongoCryptContextCtor;
+
+export type {
+  MongoCryptOptions,
+  ExplicitEncryptionContextOptions,
+  MongoCryptKMSRequest
+} from './bindings';
