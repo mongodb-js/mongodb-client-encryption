@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { MongoCrypt, MongoCryptContext, MongoCryptContextCtor } from '../../src';
+import { MongoCrypt, MongoCryptContext } from '../../src';
 import { serialize, Binary, Long } from 'bson';
 import * as crypto from 'crypto';
 
@@ -15,6 +15,8 @@ export function randomHook(buffer: Buffer, count: number): number | Error {
   return count;
 }
 
+const defaultErrorWrapper = (e: Error) => e;
+
 describe('MongoCryptConstructor', () => {
   const mc = new MongoCrypt({
     kmsProviders: serialize({ aws: {} }),
@@ -28,11 +30,8 @@ describe('MongoCryptConstructor', () => {
       hmacSha256Hook: () => {},
       sha256Hook: () => {},
       signRsaSha256Hook: () => {}
-    }
-  });
-
-  it('requires an options argument', () => {
-    expect(() => new MongoCrypt()).to.throw(/First parameter must be an object/);
+    },
+    errorWrapper: defaultErrorWrapper
   });
 
   it('creates a MongoCrypt when provided valid options', () => {
@@ -54,7 +53,8 @@ describe('MongoCryptConstructor', () => {
           signRsaSha256Hook: () => {}
         },
 
-        bypassQueryAnalysis: false
+        bypassQueryAnalysis: false,
+        errorWrapper: defaultErrorWrapper
       })
     ).to.be.instanceOf(MongoCrypt);
   });
@@ -65,14 +65,24 @@ describe('MongoCryptConstructor', () => {
 
   describe('options.kmsProviders', () => {
     it('throws if provided and are not a Uint8Array', () => {
-      expect(() => new MongoCrypt({ kmsProviders: 3 })).to.throw(
-        /Parameter `options.kmsProviders` must be a Uint8Array./
-      );
+      expect(
+        () =>
+          new MongoCrypt({
+            kmsProviders: 3,
+            errorWrapper: defaultErrorWrapper
+          })
+      ).to.throw(/Parameter `options.kmsProviders` must be a Uint8Array./);
     });
 
     it('throws when explicitly set to undefined', () => {
       // the error is different because it is thrown from libmongocrypt
-      expect(() => new MongoCrypt({ kmsProviders: undefined })).to.throw(/no kms provider set/);
+      expect(
+        () =>
+          new MongoCrypt({
+            kmsProviders: undefined,
+            errorWrapper: defaultErrorWrapper
+          })
+      ).to.throw(/no kms provider set/);
     });
   });
 
@@ -82,7 +92,8 @@ describe('MongoCryptConstructor', () => {
         () =>
           new MongoCrypt({
             kmsProviders: serialize({ aws: {} }),
-            schemaMap: 3
+            schemaMap: 3,
+            errorWrapper: defaultErrorWrapper
           })
       ).to.throw(/Parameter `options.schemaMap` must be a Uint8Array./);
     });
@@ -91,7 +102,8 @@ describe('MongoCryptConstructor', () => {
       expect(
         new MongoCrypt({
           kmsProviders: serialize({ aws: {} }),
-          schemaMap: undefined
+          schemaMap: undefined,
+          errorWrapper: defaultErrorWrapper
         })
       ).to.be.instanceOf(MongoCrypt);
     });
@@ -101,7 +113,11 @@ describe('MongoCryptConstructor', () => {
     context('when the number is positive', () => {
       it('does not error', () => {
         expect(
-          new MongoCrypt({ kmsProviders: serialize({ aws: {} }), keyExpirationMS: 1000000 })
+          new MongoCrypt({
+            kmsProviders: serialize({ aws: {} }),
+            keyExpirationMS: 1000000,
+            errorWrapper: defaultErrorWrapper
+          })
         ).to.be.instanceOf(MongoCrypt);
       });
     });
@@ -109,7 +125,11 @@ describe('MongoCryptConstructor', () => {
     context('when the number is negative', () => {
       it('throws an error', () => {
         expect(() => {
-          new MongoCrypt({ kmsProviders: serialize({ aws: {} }), keyExpirationMS: -1000000 });
+          new MongoCrypt({
+            kmsProviders: serialize({ aws: {} }),
+            keyExpirationMS: -1000000,
+            errorWrapper: defaultErrorWrapper
+          });
         }).to.throw(/must be a non-negative number/);
       });
     });
@@ -130,7 +150,8 @@ describe('MongoCryptConstructor', () => {
       expect(
         new MongoCrypt({
           kmsProviders: serialize({ aws: {} }),
-          encryptedFieldsMap: undefined
+          encryptedFieldsMap: undefined,
+          errorWrapper: defaultErrorWrapper
         })
       ).to.be.instanceOf(MongoCrypt);
     });
@@ -141,13 +162,17 @@ describe('MongoCryptConstructor', () => {
       () =>
         new MongoCrypt({
           kmsProviders: serialize({ aws: {} }),
-          cryptSharedLibSearchPaths: 3
+          cryptSharedLibSearchPaths: 3,
+          errorWrapper: defaultErrorWrapper
         })
     ).to.throw(/Option `cryptSharedLibSearchPaths` must be an array/);
   });
 
   it('has an instance property `status`', () => {
-    const mc = new MongoCrypt({ kmsProviders: serialize({ aws: {} }) });
+    const mc = new MongoCrypt({
+      kmsProviders: serialize({ aws: {} }),
+      errorWrapper: defaultErrorWrapper
+    });
     expect(mc).to.have.property('status');
     expect(mc).to.have.property('cryptSharedLibVersionInfo');
   });
@@ -161,7 +186,7 @@ describe('MongoCryptConstructor', () => {
 
     it('returns a MongoCryptContext', () => {
       expect(mc.makeEncryptionContext('foo.bar', serialize({ ping: 1 }))).to.be.instanceOf(
-        MongoCryptContextCtor
+        MongoCryptContext
       );
     });
   });
@@ -174,9 +199,7 @@ describe('MongoCryptConstructor', () => {
     });
 
     it('returns a MongoCryptContext', () => {
-      expect(mc.makeDecryptionContext(serialize({ ping: 1 }))).to.be.instanceOf(
-        MongoCryptContextCtor
-      );
+      expect(mc.makeDecryptionContext(serialize({ ping: 1 }))).to.be.instanceOf(MongoCryptContext);
     });
   });
 
@@ -190,15 +213,13 @@ describe('MongoCryptConstructor', () => {
     it('returns a MongoCryptContext', () => {
       expect(
         mc.makeExplicitDecryptionContext(serialize({ v: new Binary(Buffer.from([]), 6) }))
-      ).to.be.instanceOf(MongoCryptContextCtor);
+      ).to.be.instanceOf(MongoCryptContext);
     });
   });
 
   describe('.makeRewrapManyDataKeyContext()', () => {
     it('returns a MongoCryptContext', () => {
-      expect(mc.makeRewrapManyDataKeyContext(serialize({}))).to.be.instanceOf(
-        MongoCryptContextCtor
-      );
+      expect(mc.makeRewrapManyDataKeyContext(serialize({}))).to.be.instanceOf(MongoCryptContext);
     });
 
     describe('when a filter buffer is provided', () => {
@@ -210,7 +231,7 @@ describe('MongoCryptConstructor', () => {
 
       it('can be explicitly passed `undefined`', () => {
         expect(mc.makeRewrapManyDataKeyContext(serialize({}), undefined)).to.be.instanceOf(
-          MongoCryptContextCtor
+          MongoCryptContext
         );
       });
     });
@@ -223,7 +244,7 @@ describe('MongoCryptConstructor', () => {
       key: 'key'
     });
     it('returns a MongoCryptContext', () => {
-      expect(mc.makeDataKeyContext(providers, {})).to.be.instanceOf(MongoCryptContextCtor);
+      expect(mc.makeDataKeyContext(providers, {})).to.be.instanceOf(MongoCryptContext);
     });
 
     it('throws when the first parameter is not a Uint8Array', () => {
@@ -238,7 +259,7 @@ describe('MongoCryptConstructor', () => {
           mc.makeDataKeyContext(providers, {
             keyAltNames: undefined
           })
-        ).to.be.instanceOf(MongoCryptContextCtor);
+        ).to.be.instanceOf(MongoCryptContext);
       });
 
       it('throws a TypeError when options.keyAltNames includes values that are not Uint8Arrays', () => {
@@ -258,7 +279,7 @@ describe('MongoCryptConstructor', () => {
           mc.makeDataKeyContext(providers, {
             keyMaterial: undefined
           })
-        ).to.be.instanceOf(MongoCryptContextCtor);
+        ).to.be.instanceOf(MongoCryptContext);
       });
 
       it('throws a TypeError when provided and is not a Uint8Array', () => {
@@ -285,7 +306,7 @@ describe('MongoCryptConstructor', () => {
           expressionMode: false,
           algorithm: 'Unindexed'
         })
-      ).to.be.instanceOf(MongoCryptContextCtor);
+      ).to.be.instanceOf(MongoCryptContext);
     });
 
     it('throws a TypeError when `value` is not a Uint8Array', () => {
@@ -402,7 +423,7 @@ describe('MongoCryptConstructor', () => {
             // is enforced in libmongocrypt, not our bindings
             contentionFactor: 2
           })
-        ).to.be.instanceOf(MongoCryptContextCtor);
+        ).to.be.instanceOf(MongoCryptContext);
       });
     });
 
@@ -428,7 +449,8 @@ describe('MongoCryptContext', () => {
 
   beforeEach(() => {
     let crypt = new MongoCrypt({
-      kmsProviders: serialize({ aws: {} })
+      kmsProviders: serialize({ aws: {} }),
+      errorWrapper: defaultErrorWrapper
     });
     context = crypt.makeDecryptionContext(serialize({}));
     weakMongoCryptRef = new WeakRef(crypt);

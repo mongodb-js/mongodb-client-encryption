@@ -25,7 +25,13 @@ const REQUIRED_FILES = [
   'package/lib/crypto_callbacks.d.ts',
   'package/lib/crypto_callbacks.d.ts.map',
   'package/lib/crypto_callbacks.js',
-  'package/lib/crypto_callbacks.js.map'
+  'package/lib/crypto_callbacks.js.map',
+
+  'package/src/bindings.ts',
+  'package/lib/bindings.d.ts',
+  'package/lib/bindings.d.ts.map',
+  'package/lib/bindings.js',
+  'package/lib/bindings.js.map'
 ];
 
 describe(`Release ${packFile}`, function () {
