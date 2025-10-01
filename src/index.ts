@@ -96,10 +96,7 @@ export class MongoCrypt implements IMongoCrypt {
   constructor(options: MongoCryptOptions) {
     // Pass in JS cryptoCallbacks implementation by default.
     // If the Node.js openssl version is supported this will be ignored.
-    this.mc = new mc.MongoCrypt(
-      // @ts-expect-error: intentionally passing in an argument that will throw to preserve existing behavior
-      options == null || typeof options !== 'object' ? undefined : { cryptoCallbacks, ...options }
-    );
+    this.mc = new mc.MongoCrypt({ cryptoCallbacks, ...options });
 
     this.errorWrapper = options.errorWrapper;
 
