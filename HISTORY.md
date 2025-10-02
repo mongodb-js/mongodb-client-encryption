@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [7.0.0-alpha.1](https://github.com/mongodb-js/mongodb-client-encryption/compare/v7.0.0-alpha...v7.0.0-alpha.1) (2025-10-02)
+
+
+### Bug Fixes
+
+* **NODE-7225:** build glibc prebuilds on platforms with libc 2.28 ([#105](https://github.com/mongodb-js/mongodb-client-encryption/issues/105)) ([503df19](https://github.com/mongodb-js/mongodb-client-encryption/commit/503df1929c94a1768a5f7194338c6c85d8139df4))
+
 ## [7.0.0-alpha](https://github.com/mongodb-js/mongodb-client-encryption/compare/v6.5.0...v7.0.0-alpha) (2025-10-01)
 
 
