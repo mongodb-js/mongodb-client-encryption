@@ -11,7 +11,7 @@ describe('index.ts', () => {
   });
 
   it('exposes MongoCryptContextCtor', () => {
-    expect(bindings).to.have.property('MongoCryptContextCtor').that.is.a('function');
+    expect(bindings).to.have.property('MongoCryptContext').that.is.a('function');
   });
 
   it('exposes MongoCryptKMSRequestCtor', () => {
