@@ -1,5 +1,3 @@
-'use strict';
-
 const { execSync } = require('node:child_process');
 const { readFileSync } = require('node:fs');
 const { resolve } = require('node:path');
@@ -19,6 +17,6 @@ console.log(`mongodb-client-encryption Version: ${ceVersion}`);
 
 xtrace('npm pack --pack-destination test/bundling/webpack', { cwd: ceRoot });
 
-xtrace(`npm install --no-save mongodb-client-encryption-${ceVersion}.tgz`);
+xtrace(`npm install --ignore-scripts --no-save mongodb-client-encryption-${ceVersion}.tgz`);
 
 console.log('mongodb-client-encryption installed!');

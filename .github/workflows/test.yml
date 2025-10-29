@@ -12,13 +12,13 @@ jobs:
     strategy:
       matrix:
         os: [macos-latest, windows-2022]
-        node: [16.x, 18.x, 20.x, 22.x]
+        node: [20.19.0, 22.x]
       fail-fast: false
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: ${{ matrix.node }}
           cache: "npm"
@@ -37,12 +37,12 @@ jobs:
     strategy:
       matrix:
         linux_arch: [s390x, arm64, amd64]
-        node: [16.x, 18.x, 20.x, 22.x]
+        node: [20.19.0, 22.x]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: ${{ matrix.node }}
 
@@ -51,7 +51,6 @@ jobs:
         shell: bash
         run: |
           echo "version=$(node --print 'process.version.slice(1)')" >> "$GITHUB_OUTPUT"
-          echo "ubuntu_version=$(node --print '(+process.version.slice(1).split(`.`).at(0)) > 16 ? `noble` : `bionic`')" >> "$GITHUB_OUTPUT"
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -66,24 +65,22 @@ jobs:
             --platform linux/${{ matrix.linux_arch }} \
             --build-arg="NODE_ARCH=${{ matrix.linux_arch == 'amd64' && 'x64' || matrix.linux_arch }}" \
             --build-arg="NODE_VERSION=${{ steps.get_nodejs_version.outputs.version }}" \
-            --build-arg="UBUNTU_VERSION=${{ steps.get_nodejs_version.outputs.ubuntu_version }}" \
             --build-arg="RUN_TEST=true" \
             --output type=local,dest=./prebuilds,platform-split=false \
             -f ./.github/docker/Dockerfile.glibc \
             .
-
 
   container_tests_musl:
     runs-on: ubuntu-latest
     strategy:
       matrix:
         linux_arch: [amd64, arm64]
-        node: [16.20.1, 18.x, 20.x, 22.x]
+        node: [20.19.0, 22.x]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: ${{ matrix.node }}
 

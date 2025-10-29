@@ -2,7 +2,7 @@
 
 import util from 'node:util';
 import process from 'node:process';
-import fs from 'node:fs/promises';
+import fs, { readFile } from 'node:fs/promises';
 import child_process from 'node:child_process';
 import events from 'node:events';
 import path from 'node:path';
@@ -189,9 +189,17 @@ async function buildBindings(args, pkg) {
   await run('npm', ['run', 'prepare']);
 
   if (process.platform === 'darwin' && process.arch === 'arm64') {
+    // @ts-ignore
+    const {
+      binary: {
+        napi_versions: [
+          napiVersion
+        ]
+      }
+    } = JSON.parse(await readFile(resolveRoot('package.json'), 'utf-8'));
     // The "arm64" build is actually a universal binary
-    const armTar = `mongodb-client-encryption-v${pkg.version}-napi-v4-darwin-arm64.tar.gz`;
-    const x64Tar = `mongodb-client-encryption-v${pkg.version}-napi-v4-darwin-x64.tar.gz`;
+    const armTar = `mongodb-client-encryption-v${pkg.version}-napi-v${napiVersion}-darwin-arm64.tar.gz`;
+    const x64Tar = `mongodb-client-encryption-v${pkg.version}-napi-v${napiVersion}-darwin-x64.tar.gz`;
     await fs.copyFile(resolveRoot('prebuilds', armTar), resolveRoot('prebuilds', x64Tar));
   }
 }

@@ -1,13 +1,7 @@
 #ifndef NODE_MONGOCRYPT_H
 #define NODE_MONGOCRYPT_H
 
-// We generally only target N-API version 4, but the instance data
-// feature is only available in N-API version 6. However, it is
-// available in all Node.js versions that have N-API version 4
-// as an experimental feature (that has not been changed since then).
-#define NAPI_VERSION 6
-#define NAPI_EXPERIMENTAL
-#define NODE_API_EXPERIMENTAL_NOGC_ENV_OPT_OUT
+#define NAPI_VERSION 9
 
 #include <napi.h>
 
