@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [7.0.0-alpha.1](https://github.com/mongodb-js/mongodb-client-encryption/compare/v7.0.0-alpha...v7.0.0-alpha.1) (2025-10-02)
+
+
+### Bug Fixes
+
+* **NODE-7225:** build glibc prebuilds on platforms with libc 2.28 ([#105](https://github.com/mongodb-js/mongodb-client-encryption/issues/105)) ([503df19](https://github.com/mongodb-js/mongodb-client-encryption/commit/503df1929c94a1768a5f7194338c6c85d8139df4))
+
+## [7.0.0-alpha](https://github.com/mongodb-js/mongodb-client-encryption/compare/v6.5.0...v7.0.0-alpha) (2025-10-01)
+
+
+### ⚠ BREAKING CHANGES
+
+* **NODE-6297:** Remove support for explicitly providing CryptoCallbacks ([#103](https://github.com/mongodb-js/mongodb-client-encryption/issues/103))
+* **NODE-7212:** upgrade macos deployment target to 11 ([#99](https://github.com/mongodb-js/mongodb-client-encryption/issues/99))
+* **NODE-7168:** increase napi version to 9 ([#93](https://github.com/mongodb-js/mongodb-client-encryption/issues/93))
+* **NODE-7170:** drop support for Nodejs <20.19.0 ([#92](https://github.com/mongodb-js/mongodb-client-encryption/issues/92))
+
+### Features
+
+* **NODE-6297:** Remove support for explicitly providing CryptoCallbacks ([#103](https://github.com/mongodb-js/mongodb-client-encryption/issues/103)) ([036d901](https://github.com/mongodb-js/mongodb-client-encryption/commit/036d901bd0a0d1e1b29264b17223021e1975172f))
+* **NODE-7043:** add support for custom error wrapping functions ([#102](https://github.com/mongodb-js/mongodb-client-encryption/issues/102)) ([7f0be63](https://github.com/mongodb-js/mongodb-client-encryption/commit/7f0be6317ca9355bc12fe411eb686ad572cd7fed))
+* **NODE-7168:** increase napi version to 9 ([#93](https://github.com/mongodb-js/mongodb-client-encryption/issues/93)) ([be138a9](https://github.com/mongodb-js/mongodb-client-encryption/commit/be138a9022d8ae0c7fd7b8cb16561fd2f8f9db89))
+* **NODE-7170:** drop support for Nodejs &lt;20.19.0 ([#92](https://github.com/mongodb-js/mongodb-client-encryption/issues/92)) ([c46c1b9](https://github.com/mongodb-js/mongodb-client-encryption/commit/c46c1b944c97ecc8e668f87055a8df7cf533ed54))
+* **NODE-7212:** upgrade macos deployment target to 11 ([#99](https://github.com/mongodb-js/mongodb-client-encryption/issues/99)) ([aa61a35](https://github.com/mongodb-js/mongodb-client-encryption/commit/aa61a35f5e174cd1c1e247e036093e18c88268c6))
+
 ## [6.5.0](https://github.com/mongodb-js/mongodb-client-encryption/compare/v6.4.0...v6.5.0) (2025-08-14)
 
 

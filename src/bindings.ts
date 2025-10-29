@@ -64,6 +64,9 @@ export interface IMongoCryptContext {
   get state(): number;
 }
 
+/**
+ * All options that can be provided to a C++ MongoCrypt constructor.
+ */
 export type MongoCryptConstructorOptions = {
   kmsProviders?: Uint8Array;
   schemaMap?: Uint8Array;
@@ -132,7 +135,7 @@ export type ExplicitEncryptionContextOptions = NonNullable<
   Parameters<IMongoCrypt['makeExplicitEncryptionContext']>[1]
 >;
 export type DataKeyContextOptions = NonNullable<Parameters<IMongoCrypt['makeDataKeyContext']>[1]>;
-export type MongoCryptOptions = MongoCryptConstructorOptions;
+export type MongoCryptOptions = Omit<MongoCryptConstructorOptions, 'cryptoCallbacks'>;
 export type MongoCryptErrorWrapper = MongoCryptOptions['errorWrapper'];
 
 // export const
