@@ -10,7 +10,8 @@ ENV PATH=$PATH:/nodejs/bin
 WORKDIR /mongodb-client-encryption
 COPY . .
 
-RUN yum install -y python39 git make gcc-c++
+RUN yum -y install python39 git gcc-toolset-14
+ENV PATH=/opt/rh/gcc-toolset-14/root/bin/:$PATH
 
 RUN npm run install:libmongocrypt
 
