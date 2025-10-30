@@ -12,7 +12,7 @@ jobs:
     strategy:
       matrix:
         os: [macos-latest, windows-2022]
-        node: [20.19.0, 22.x]
+        node: [20.19.0, 22.x, 24.x]
       fail-fast: false
     runs-on: ${{ matrix.os }}
     steps:
@@ -37,7 +37,7 @@ jobs:
     strategy:
       matrix:
         linux_arch: [s390x, arm64, amd64]
-        node: [20.19.0, 22.x]
+        node: [20.19.0, 22.x, 24.x]
       fail-fast: false
     steps:
       - uses: actions/checkout@v5
@@ -75,7 +75,7 @@ jobs:
     strategy:
       matrix:
         linux_arch: [amd64, arm64]
-        node: [20.19.0, 22.x]
+        node: [20.19.0, 22.x, 24.x]
       fail-fast: false
     steps:
       - uses: actions/checkout@v5
