@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [7.0.0](https://github.com/mongodb-js/mongodb-client-encryption/compare/v7.0.0-alpha.1...v7.0.0) (2025-11-05)
+
+
+### Documentation
+
+* add comma ([#116](https://github.com/mongodb-js/mongodb-client-encryption/issues/116)) ([55c11d4](https://github.com/mongodb-js/mongodb-client-encryption/commit/55c11d4ef01161198bb3f954fc345441d1a0ed77))
+
 ## [7.0.0-alpha.1](https://github.com/mongodb-js/mongodb-client-encryption/compare/v7.0.0-alpha...v7.0.0-alpha.1) (2025-10-02)
 
 
