@@ -18,7 +18,7 @@ jobs:
         os: [macos-latest, windows-2022]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Build ${{ matrix.os }} Prebuild
         run: node .github/scripts/libmongocrypt.mjs ${{ runner.os == 'Windows' && '--build' || '' }}
@@ -42,7 +42,7 @@ jobs:
       matrix:
         linux_arch: [s390x, arm64, amd64]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -77,7 +77,7 @@ jobs:
         linux_arch: [amd64, arm64]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
