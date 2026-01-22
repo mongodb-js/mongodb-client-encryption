@@ -99,8 +99,16 @@ export async function buildLibMongoCrypt(libmongocryptRoot, nodeDepsRoot, option
   });
 
   const WINDOWS_CMAKE_FLAGS =
-    process.platform === 'win32' // Windows is still called "win32" when it is 64-bit
-      ? toCLIFlags({ Thost: 'x64', A: 'x64', DENABLE_WINDOWS_STATIC_RUNTIME: 'ON' })
+    process.platform === 'win32'
+      ? toCLIFlags({
+        // Tell CMake that binaries should link with the static MSVC runtime instead of
+        // the default dynamic one.
+        DCMAKE_MSVC_RUNTIME_LIBRARY: 'MultiThreaded$<$<CONFIG:Debug>:Debug>',
+        // Tell CMake to use the MSVC 64-bit compiler toolchain
+        T: 'host=x64',
+        // Tell CMake to generate a 64-bit binaries
+        A: 'x64',
+      })
       : [];
 
   const DARWIN_CMAKE_FLAGS =
