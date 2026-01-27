@@ -38,7 +38,7 @@ export function buildLibmongocryptDownloadUrl(ref, platform) {
         const [major, minor, _patch] = ref.split('.');
 
         // Just a note: it may appear that this logic _doesn't_ support patch releases but it actually does.
-        // libmongocrypt's creates release branches for minor releases in the form `r<major>.<minor>`.  
+        // libmongocrypt's creates release branches for minor releases in the form `r<major>.<minor>`.
         // Any patches made to this branch are committed as tags in the form <major>.<minor>.<patch>.
         // So, the branch that is used for the AWS s3 upload is `r<major>.<minor>` and the commit hash
         // is the commit hash we parse from the `getCommitFromRef()` (which handles switching to git tags and
@@ -49,7 +49,7 @@ export function buildLibmongocryptDownloadUrl(ref, platform) {
     }
 
     // just a note here - `master` refers to the branch, the hash is the commit on that branch.
-    // if we ever need to download binaries from a non-master branch (or non-release branch), 
+    // if we ever need to download binaries from a non-master branch (or non-release branch),
     // this will need to be modified somehow.
     return `https://mciuploads.s3.amazonaws.com/libmongocrypt/${platform}/master/${hash}/libmongocrypt.tar.gz`;
 }
@@ -81,7 +81,6 @@ export async function run(command, args = [], options = {}) {
     const commandDetails = `+ ${command} ${args.join(' ')}${options.cwd ? ` (in: ${options.cwd})` : ''}`;
     console.error(commandDetails);
     const proc = spawn(command, args, {
-        shell: process.platform === 'win32',
         stdio: 'inherit',
         cwd: resolveRoot('.'),
         ...options
@@ -100,7 +99,7 @@ function getLibc() {
     /**
      * executes `ldd --version`.  on Alpine linux, `ldd` and `ldd --version` return exit code 1 and print the version
      * info to stderr, but on other platforms, `ldd --version` prints to stdout and returns exit code 0.
-     * 
+     *
      * So, this script works on both by return stderr if the command returns a non-zero exit code, otherwise stdout.
      */
     function lddVersion() {
