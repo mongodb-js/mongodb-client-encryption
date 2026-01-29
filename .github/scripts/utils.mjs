@@ -81,6 +81,7 @@ export async function run(command, args = [], options = {}) {
     const commandDetails = `+ ${command} ${args.join(' ')}${options.cwd ? ` (in: ${options.cwd})` : ''}`;
     console.error(commandDetails);
     const proc = spawn(command, args, {
+        shell: true,
         stdio: 'inherit',
         cwd: resolveRoot('.'),
         ...options
