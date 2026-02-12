@@ -98,7 +98,7 @@ function getLibc() {
     if (process.platform !== 'linux') return null;
 
     /**
-     * executes `ldd --version`.  on Alpine linux, `ldd` and `ldd --version` return exit code 1 and print the version
+     * Executes `ldd --version`.  on Alpine linux, `ldd` and `ldd --version` return exit code 1 and print the version
      * info to stderr, but on other platforms, `ldd --version` prints to stdout and returns exit code 0.
      *
      * So, this script works on both by return stderr if the command returns a non-zero exit code, otherwise stdout.
