@@ -10,14 +10,18 @@
     "addon",
     "lib",
     "src",
-    "binding.gyp"
+    "binding.gyp",
+    "etc/libmongocrypt.mjs",
+    "etc/utils.mjs",
+    "etc/get-commit-from-ref.sh"
   ],
   "directories": {
     "lib": "lib"
   },
   "scripts": {
-    "install:libmongocrypt": "node .github/scripts/libmongocrypt.mjs",
-    "install": "prebuild-install --runtime napi || node-gyp rebuild",
+    "install:libmongocrypt": "node etc/libmongocrypt.mjs",
+    "clean-install": "node etc/libmongocrypt.mjs --skip-bindings && node-gyp rebuild",
+    "install": "prebuild-install --runtime napi || npm run clean-install",
     "clang-format": "clang-format --style=file:.clang-format --Werror -i addon/*",
     "check:eslint": "ESLINT_USE_FLAT_CONFIG=false eslint src test",
     "check:clang-format": "clang-format --style=file:.clang-format --dry-run --Werror addon/*",

@@ -10,12 +10,12 @@ const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 
 /** Resolves to the root of this repository */
 export function resolveRoot(...paths) {
-    return path.resolve(__dirname, '..', '..', ...paths);
+    return path.resolve(__dirname, '..', ...paths);
 }
 
 export function getCommitFromRef(ref) {
     console.error(`resolving ref: ${ref}`);
-    const script = resolveRoot('.github', 'scripts', 'get-commit-from-ref.sh');
+    const script = resolveRoot('etc', 'get-commit-from-ref.sh');
     const output = execSync(`bash ${script}`, { env: { REF: ref }, encoding: 'utf-8' })
 
     const regex = /COMMIT_HASH=(?<hash>[a-zA-Z0-9]+)/
