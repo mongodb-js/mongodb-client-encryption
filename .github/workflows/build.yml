@@ -9,7 +9,6 @@ name: Build
 permissions:
   contents: write
   pull-requests: write
-  id-token: write
 
 jobs:
   host_builds:
