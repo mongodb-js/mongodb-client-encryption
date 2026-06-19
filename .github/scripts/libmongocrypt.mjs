@@ -129,22 +129,31 @@ export async function buildLibMongoCrypt(libmongocryptRoot, nodeDepsRoot, option
   });
 }
 
-async function downloadFile(url, destPath) {
-  const response = await new Promise((resolve, reject) => {
-    function request(requestUrl) {
-      https.get(requestUrl, res => {
-        if (res.statusCode === 301 || res.statusCode === 302 || res.statusCode === 303) {
-          res.resume();
-          request(res.headers.location);
+async function getHttpResponse(url, redirectDepth = 0) {
+  if (redirectDepth > 5) throw new Error(`Too many redirects for ${url}`);
+
+  return new Promise((resolve, reject) => {
+    https.get(url, res => {
+      if ([301, 302, 303, 307, 308].includes(res.statusCode)) {
+        res.resume();
+        const location = res.headers.location;
+        if (!location) {
+          reject(new Error(`Redirect with no Location header from ${url}`));
           return;
         }
-        resolve(res);
-      }).on('error', reject);
-    }
-    request(url);
+        getHttpResponse(location, redirectDepth + 1).then(resolve, reject);
+        return;
+      }
+      resolve(res);
+    }).on('error', reject);
   });
+}
+
+async function downloadFile(url, destPath) {
+  const response = await getHttpResponse(url);
 
   if (response.statusCode !== 200) {
+    response.resume();
     throw new Error(`HTTP ${response.statusCode} downloading ${url}`);
   }
 
@@ -154,15 +163,25 @@ async function downloadFile(url, destPath) {
 async function verifySignature(tarballPath, ascURL) {
   const ascPath = tarballPath.replace('.tar.gz', '.asc');
   const pubKeyPath = resolveRoot('_libmongocrypt.pub');
+  const gnupgHome = resolveRoot('_gnupghome');
 
   try {
     await downloadFile(ascURL, ascPath);
     await downloadFile('https://pgp.mongodb.com/libmongocrypt.pub', pubKeyPath);
-    await run('gpg', ['--import', pubKeyPath]);
-    await run('gpg', ['--verify', ascPath, tarballPath]);
+    await fs.mkdir(gnupgHome, { recursive: true });
+    await fs.chmod(gnupgHome, 0o700);
+    const gpgEnv = { env: { ...process.env, GNUPGHOME: gnupgHome } };
+    await run('gpg', ['--batch', '--import', pubKeyPath], gpgEnv);
+    await run('gpg', ['--batch', '--verify', ascPath, tarballPath], gpgEnv);
+  } catch (error) {
+    if (error.message?.includes('CRASH') && error.message?.includes('gpg')) {
+      throw new Error(`GPG verification failed — ensure gnupg is installed. Original: ${error.message}`);
+    }
+    throw error;
   } finally {
     await fs.rm(ascPath, { force: true });
     await fs.rm(pubKeyPath, { force: true });
+    await fs.rm(gnupgHome, { recursive: true, force: true });
   }
 }
 
