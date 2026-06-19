@@ -35,7 +35,7 @@ export function buildLibmongocryptDownloadUrl(ref, platform) {
         return `https://github.com/mongodb/libmongocrypt/releases/download/${ref}/libmongocrypt-${platform}-${ref}.tar.gz`;
     }
 
-    // For development refs (master only), fall back to S3
+    // For development refs (e.g. master), fall back to S3
     const hash = getCommitFromRef(ref);
     return `https://mciuploads.s3.amazonaws.com/libmongocrypt/${platform}/master/${hash}/libmongocrypt.tar.gz`;
 }

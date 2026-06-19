@@ -10,10 +10,10 @@ ENV PATH=$PATH:/nodejs/bin
 WORKDIR /mongodb-client-encryption
 COPY . .
 
-RUN yum -y install python39 git gcc-toolset-14
+RUN yum -y install python39 git gcc-toolset-14 cmake
 ENV PATH=/opt/rh/gcc-toolset-14/root/bin/:$PATH
 
-RUN npm run install:libmongocrypt
+RUN npm run install:libmongocrypt -- --build
 
 ARG RUN_TEST
 RUN if [ -n "$RUN_TEST" ]; then npm test ; else echo "skipping tests" ; fi
