@@ -3,10 +3,10 @@
 import util from 'node:util';
 import process from 'node:process';
 import fs, { readFile } from 'node:fs/promises';
-import { createWriteStream } from 'node:fs';
 import path from 'node:path';
-import https from 'node:https';
-import stream from 'node:stream/promises';
+import { Readable } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
+import { createWriteStream } from 'node:fs';
 import {
   buildLibmongocryptDownloadUrl,
   getLibmongocryptPrebuildName,
@@ -129,35 +129,10 @@ export async function buildLibMongoCrypt(libmongocryptRoot, nodeDepsRoot, option
   });
 }
 
-async function getHttpResponse(url, redirectDepth = 0) {
-  if (redirectDepth > 5) throw new Error(`Too many redirects for ${url}`);
-
-  return new Promise((resolve, reject) => {
-    https.get(url, res => {
-      if ([301, 302, 303, 307, 308].includes(res.statusCode)) {
-        res.resume();
-        const location = res.headers.location;
-        if (!location) {
-          reject(new Error(`Redirect with no Location header from ${url}`));
-          return;
-        }
-        getHttpResponse(location, redirectDepth + 1).then(resolve, reject);
-        return;
-      }
-      resolve(res);
-    }).on('error', reject);
-  });
-}
-
 async function downloadFile(url, destPath) {
-  const response = await getHttpResponse(url);
-
-  if (response.statusCode !== 200) {
-    response.resume();
-    throw new Error(`HTTP ${response.statusCode} downloading ${url}`);
-  }
-
-  await stream.pipeline(response, createWriteStream(destPath));
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`HTTP ${response.status} downloading ${url}`);
+  await pipeline(Readable.fromWeb(response.body), createWriteStream(destPath));
 }
 
 export async function downloadLibMongoCrypt(nodeDepsRoot, { ref }) {
