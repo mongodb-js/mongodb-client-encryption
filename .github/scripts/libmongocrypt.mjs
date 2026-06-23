@@ -3,8 +3,7 @@
 import util from 'node:util';
 import process from 'node:process';
 import fs, { readFile } from 'node:fs/promises';
-import child_process from 'node:child_process';
-import events from 'node:events';
+import { createWriteStream } from 'node:fs';
 import path from 'node:path';
 import https from 'node:https';
 import stream from 'node:stream/promises';
@@ -130,47 +129,69 @@ export async function buildLibMongoCrypt(libmongocryptRoot, nodeDepsRoot, option
   });
 }
 
+async function getHttpResponse(url, redirectDepth = 0) {
+  if (redirectDepth > 5) throw new Error(`Too many redirects for ${url}`);
+
+  return new Promise((resolve, reject) => {
+    https.get(url, res => {
+      if ([301, 302, 303, 307, 308].includes(res.statusCode)) {
+        res.resume();
+        const location = res.headers.location;
+        if (!location) {
+          reject(new Error(`Redirect with no Location header from ${url}`));
+          return;
+        }
+        getHttpResponse(location, redirectDepth + 1).then(resolve, reject);
+        return;
+      }
+      resolve(res);
+    }).on('error', reject);
+  });
+}
+
+async function downloadFile(url, destPath) {
+  const response = await getHttpResponse(url);
+
+  if (response.statusCode !== 200) {
+    response.resume();
+    throw new Error(`HTTP ${response.statusCode} downloading ${url}`);
+  }
+
+  await stream.pipeline(response, createWriteStream(destPath));
+}
+
 export async function downloadLibMongoCrypt(nodeDepsRoot, { ref }) {
   const prebuild = getLibmongocryptPrebuildName();
-
   const downloadURL = buildLibmongocryptDownloadUrl(ref, prebuild);
 
   console.error('downloading libmongocrypt...', downloadURL);
-  const destination = resolveRoot(`_libmongocrypt-${ref}`);
 
-  await fs.rm(destination, { recursive: true, force: true });
-  await fs.mkdir(destination);
-
-  const downloadDestination = `nocrypto`;
-  const unzipArgs = ['-xzv', '-C', `_libmongocrypt-${ref}`, downloadDestination];
-  console.error(`+ tar ${unzipArgs.join(' ')}`);
-  const unzip = child_process.spawn('tar', unzipArgs, {
-    stdio: ['pipe', 'inherit', 'pipe'],
-    cwd: resolveRoot('.')
-  });
-  if (unzip.stdin == null) throw new Error('Tar process must have piped stdin');
-
-  const [response] = await events.once(https.get(downloadURL), 'response');
+  const tarballPath = resolveRoot(`_libmongocrypt-${ref}.tar.gz`);
 
   const start = performance.now();
-
-  try {
-    await stream.pipeline(response, unzip.stdin);
-  } catch {
-    await fs.access(path.join(`_libmongocrypt-${ref}`, downloadDestination));
-  }
-
+  await downloadFile(downloadURL, tarballPath);
   const end = performance.now();
 
   console.error(`downloaded libmongocrypt in ${(end - start) / 1000} secs...`);
 
+  const destination = resolveRoot(`_libmongocrypt-${ref}`);
+  await fs.rm(destination, { recursive: true, force: true });
+  await fs.mkdir(destination);
+
+  // Use a relative path: Windows bsd-tar misinterprets absolute paths with drive
+  // letters (e.g. "D:\...") as URL hostnames in both -C and -f arguments.
+  const tarballRelPath = path.relative(destination, tarballPath).replace(/\\/g, '/');
+  await run('tar', ['-xzv', '-f', tarballRelPath], { cwd: destination });
+  await fs.rm(tarballPath, { force: true });
+
   await fs.rm(nodeDepsRoot, { recursive: true, force: true });
-  await fs.cp(resolveRoot(destination, 'nocrypto'), nodeDepsRoot, { recursive: true });
+  await fs.cp(destination, nodeDepsRoot, { recursive: true });
+
   const potentialLib64Path = path.join(nodeDepsRoot, 'lib64');
   try {
     await fs.rename(potentialLib64Path, path.join(nodeDepsRoot, 'lib'));
-  } catch (error) {
-    await fs.access(path.join(nodeDepsRoot, 'lib')); // Ensure there is a "lib" directory
+  } catch {
+    await fs.access(path.join(nodeDepsRoot, 'lib'));
   }
 }
 

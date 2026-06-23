@@ -68,7 +68,8 @@
                 '<(module_root_dir)/deps/lib/mongocrypt-static.lib',
                 '<(module_root_dir)/deps/lib/kms_message-static.lib',
                 '<(module_root_dir)/deps/lib/bson-static-for-libmongocrypt.lib',
-                '-lws2_32'
+                '-lws2_32',
+                '-lbcrypt'
               ]
             }
           }]

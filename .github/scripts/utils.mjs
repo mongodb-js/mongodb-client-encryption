@@ -30,43 +30,29 @@ export function getCommitFromRef(ref) {
 }
 
 export function buildLibmongocryptDownloadUrl(ref, platform) {
-    const hash = getCommitFromRef(ref);
-
-    // sort of a hack - if we have an official release version, it'll be in the form `major.minor`.  otherwise,
-    // we'd expect a commit hash or `master`.
+    // libmongocrypt 1.18.0+ is distributed via GitHub Releases (S3 release bucket restricted per MONGOCRYPT-841)
     if (ref.includes('.')) {
-        const [major, minor, _patch] = ref.split('.');
-
-        // Just a note: it may appear that this logic _doesn't_ support patch releases but it actually does.
-        // libmongocrypt's creates release branches for minor releases in the form `r<major>.<minor>`.
-        // Any patches made to this branch are committed as tags in the form <major>.<minor>.<patch>.
-        // So, the branch that is used for the AWS s3 upload is `r<major>.<minor>` and the commit hash
-        // is the commit hash we parse from the `getCommitFromRef()` (which handles switching to git tags and
-        // getting the commit hash at that tag just fine).
-        const branch = `r${major}.${minor}`
-
-        return `https://mciuploads.s3.amazonaws.com/libmongocrypt-release/${platform}/${branch}/${hash}/libmongocrypt.tar.gz`;
+        return `https://github.com/mongodb/libmongocrypt/releases/download/${ref}/libmongocrypt-${platform}-${ref}.tar.gz`;
     }
 
-    // just a note here - `master` refers to the branch, the hash is the commit on that branch.
-    // if we ever need to download binaries from a non-master branch (or non-release branch),
-    // this will need to be modified somehow.
+    // For development refs (master only), fall back to S3
+    const hash = getCommitFromRef(ref);
     return `https://mciuploads.s3.amazonaws.com/libmongocrypt/${platform}/master/${hash}/libmongocrypt.tar.gz`;
 }
 
 export function getLibmongocryptPrebuildName() {
     const prebuildIdentifierFactory = {
-        'darwin': () => 'macos',
-        'win32': () => 'windows-test',
+        'darwin': () => 'macos-universal',
+        'win32': () => 'windows-x86_64',
         'linux': () => {
             const key = `${getLibc()}-${process.arch}`;
             return {
-                ['musl-x64']: 'alpine-amd64-earthly',
-                ['musl-arm64']: 'alpine-arm64-earthly',
-                ['glibc-ppc64']: 'rhel-71-ppc64el',
-                ['glibc-s390x']: 'rhel72-zseries-test',
-                ['glibc-arm64']: 'ubuntu1804-arm64',
-                ['glibc-x64']: 'rhel-70-64-bit',
+                ['musl-x64']: 'linux-x86_64-musl_1_2-nocrypto',
+                ['musl-arm64']: 'linux-arm64-musl_1_2-nocrypto',
+                ['glibc-ppc64']: 'linux-ppc64le-glibc_2_17-nocrypto',
+                ['glibc-s390x']: 'linux-s390x-glibc_2_7-nocrypto',
+                ['glibc-arm64']: 'linux-arm64-glibc_2_17-nocrypto',
+                ['glibc-x64']: 'linux-x86_64-glibc_2_7-nocrypto',
             }[key]
         }
     }[process.platform] ?? (() => {
