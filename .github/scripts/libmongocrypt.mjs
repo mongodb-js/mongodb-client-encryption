@@ -6,7 +6,8 @@ import fs, { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
-import { createWriteStream } from 'node:fs';
+import { spawn } from 'node:child_process';
+import { once } from 'node:events';
 import {
   buildLibmongocryptDownloadUrl,
   getLibmongocryptPrebuildName,
@@ -129,35 +130,29 @@ export async function buildLibMongoCrypt(libmongocryptRoot, nodeDepsRoot, option
   });
 }
 
-async function downloadFile(url, destPath) {
-  const response = await fetch(url);
-  if (!response.ok) throw new Error(`HTTP ${response.status} downloading ${url}`);
-  await pipeline(Readable.fromWeb(response.body), createWriteStream(destPath));
-}
-
 export async function downloadLibMongoCrypt(nodeDepsRoot, { ref }) {
   const prebuild = getLibmongocryptPrebuildName();
   const downloadURL = buildLibmongocryptDownloadUrl(ref, prebuild);
 
   console.error('downloading libmongocrypt...', downloadURL);
 
-  const tarballPath = resolveRoot(`_libmongocrypt-${ref}.tar.gz`);
-
-  const start = performance.now();
-  await downloadFile(downloadURL, tarballPath);
-  const end = performance.now();
-
-  console.error(`downloaded libmongocrypt in ${(end - start) / 1000} secs...`);
-
   const destination = resolveRoot(`_libmongocrypt-${ref}`);
   await fs.rm(destination, { recursive: true, force: true });
   await fs.mkdir(destination);
 
-  // Use a relative path: Windows bsd-tar misinterprets absolute paths with drive
-  // letters (e.g. "D:\...") as URL hostnames in both -C and -f arguments.
-  const tarballRelPath = path.relative(destination, tarballPath).replace(/\\/g, '/');
-  await run('tar', ['-xzv', '-f', tarballRelPath], { cwd: destination });
-  await fs.rm(tarballPath, { force: true });
+  const response = await fetch(downloadURL);
+  if (!response.ok) throw new Error(`HTTP ${response.status} downloading ${downloadURL}`);
+
+  const start = performance.now();
+
+  const unzip = spawn('tar', ['-xzv', '-C', destination], { stdio: ['pipe', 'inherit', 'inherit'] });
+  await pipeline(Readable.fromWeb(response.body), unzip.stdin);
+  await once(unzip, 'exit');
+
+  if (unzip.exitCode !== 0) throw new Error(`tar exited with code ${unzip.exitCode}`);
+
+  const end = performance.now();
+  console.error(`downloaded libmongocrypt in ${(end - start) / 1000} secs...`);
 
   await fs.rm(nodeDepsRoot, { recursive: true, force: true });
   await fs.cp(destination, nodeDepsRoot, { recursive: true });
