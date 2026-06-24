@@ -3,11 +3,12 @@
 import util from 'node:util';
 import process from 'node:process';
 import fs, { readFile } from 'node:fs/promises';
-import child_process from 'node:child_process';
-import events from 'node:events';
+import { createWriteStream } from 'node:fs';
 import path from 'node:path';
-import https from 'node:https';
-import stream from 'node:stream/promises';
+import { Readable } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
+import { spawn } from 'node:child_process';
+import { once } from 'node:events';
 import {
   buildLibmongocryptDownloadUrl,
   getLibmongocryptPrebuildName,
@@ -130,47 +131,75 @@ export async function buildLibMongoCrypt(libmongocryptRoot, nodeDepsRoot, option
   });
 }
 
+async function verifySignature(tarballPath, ref, prebuild) {
+  const ascURL = `https://github.com/mongodb/libmongocrypt/releases/download/${ref}/libmongocrypt-${prebuild}-${ref}.asc`;
+  const pubKeyURL = 'https://pgp.mongodb.com/libmongocrypt.pub';
+  const ascPath = `${tarballPath}.asc`;
+  const pubKeyPath = path.join(path.dirname(tarballPath), 'libmongocrypt.pub');
+
+  console.error('verifying libmongocrypt signature...');
+
+  try {
+    const [ascResponse, pubKeyResponse] = await Promise.all([fetch(ascURL), fetch(pubKeyURL)]);
+    if (!ascResponse.ok) throw new Error(`HTTP ${ascResponse.status} downloading ${ascURL}`);
+    if (!pubKeyResponse.ok) throw new Error(`HTTP ${pubKeyResponse.status} downloading ${pubKeyURL}`);
+
+    await Promise.all([
+      fs.writeFile(ascPath, Buffer.from(await ascResponse.arrayBuffer())),
+      fs.writeFile(pubKeyPath, Buffer.from(await pubKeyResponse.arrayBuffer()))
+    ]);
+
+    await run('gpg', ['--import', pubKeyPath]);
+    await run('gpg', ['--verify', ascPath, tarballPath]);
+  } finally {
+    await Promise.all([fs.rm(ascPath, { force: true }), fs.rm(pubKeyPath, { force: true })]);
+  }
+
+  console.error('libmongocrypt signature verified');
+}
+
 export async function downloadLibMongoCrypt(nodeDepsRoot, { ref }) {
   const prebuild = getLibmongocryptPrebuildName();
-
   const downloadURL = buildLibmongocryptDownloadUrl(ref, prebuild);
 
   console.error('downloading libmongocrypt...', downloadURL);
-  const destination = resolveRoot(`_libmongocrypt-${ref}`);
 
+  const destination = resolveRoot(`_libmongocrypt-${ref}`);
   await fs.rm(destination, { recursive: true, force: true });
   await fs.mkdir(destination);
 
-  const downloadDestination = `nocrypto`;
-  const unzipArgs = ['-xzv', '-C', `_libmongocrypt-${ref}`, downloadDestination];
-  console.error(`+ tar ${unzipArgs.join(' ')}`);
-  const unzip = child_process.spawn('tar', unzipArgs, {
-    stdio: ['pipe', 'inherit', 'pipe'],
-    cwd: resolveRoot('.')
-  });
-  if (unzip.stdin == null) throw new Error('Tar process must have piped stdin');
+  const tarballPath = resolveRoot(`_libmongocrypt-${ref}.tar.gz`);
 
-  const [response] = await events.once(https.get(downloadURL), 'response');
+  const response = await fetch(downloadURL);
+  if (!response.ok) throw new Error(`HTTP ${response.status} downloading ${downloadURL}`);
 
   const start = performance.now();
 
-  try {
-    await stream.pipeline(response, unzip.stdin);
-  } catch {
-    await fs.access(path.join(`_libmongocrypt-${ref}`, downloadDestination));
+  await pipeline(Readable.fromWeb(response.body), createWriteStream(tarballPath));
+
+  // Verify GPG signature for GitHub releases (release refs contain '.')
+  if (ref.includes('.')) {
+    await verifySignature(tarballPath, ref, prebuild);
   }
 
-  const end = performance.now();
+  const unzip = spawn('tar', ['-xzv', '-C', destination, '-f', tarballPath], { stdio: ['ignore', 'inherit', 'inherit'] });
+  await once(unzip, 'exit');
 
+  if (unzip.exitCode !== 0) throw new Error(`tar exited with code ${unzip.exitCode}`);
+
+  await fs.rm(tarballPath, { force: true });
+
+  const end = performance.now();
   console.error(`downloaded libmongocrypt in ${(end - start) / 1000} secs...`);
 
   await fs.rm(nodeDepsRoot, { recursive: true, force: true });
-  await fs.cp(resolveRoot(destination, 'nocrypto'), nodeDepsRoot, { recursive: true });
+  await fs.cp(destination, nodeDepsRoot, { recursive: true });
+
   const potentialLib64Path = path.join(nodeDepsRoot, 'lib64');
   try {
     await fs.rename(potentialLib64Path, path.join(nodeDepsRoot, 'lib'));
-  } catch (error) {
-    await fs.access(path.join(nodeDepsRoot, 'lib')); // Ensure there is a "lib" directory
+  } catch {
+    await fs.access(path.join(nodeDepsRoot, 'lib'));
   }
 }
 
