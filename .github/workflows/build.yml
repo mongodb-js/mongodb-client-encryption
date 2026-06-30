@@ -16,7 +16,7 @@ jobs:
         os: [macos-latest, windows-2022]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Build ${{ matrix.os }} Prebuild
         run: node .github/scripts/libmongocrypt.mjs --build
@@ -24,7 +24,7 @@ jobs:
 
       - id: upload
         name: Upload prebuild
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: build-${{ matrix.os }}
           path: prebuilds/
@@ -40,7 +40,7 @@ jobs:
       matrix:
         linux_arch: [s390x, arm64, amd64]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -60,7 +60,7 @@ jobs:
 
       - id: upload
         name: Upload prebuild
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: build-linux-glibc-${{ matrix.linux_arch }}
           path: prebuilds/
@@ -75,7 +75,7 @@ jobs:
         linux_arch: [amd64, arm64]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -94,7 +94,7 @@ jobs:
             .
       - id: upload
         name: Upload prebuild
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: build-linux-musl-${{ matrix.linux_arch }}
           path: prebuilds/
