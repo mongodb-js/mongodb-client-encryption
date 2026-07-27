@@ -36,7 +36,7 @@ jobs:
   # process is the only way to exercise its x86_64 half.
   test_macos_x64_prebuild:
     needs: host_builds
-    runs-on: macos-15-intel
+    runs-on: macos-26-intel
     strategy:
       matrix:
         node: [20.19.0, 22.x, 24.x]
