@@ -115,29 +115,36 @@ export async function buildLibMongoCrypt(libmongocryptRoot, nodeDepsRoot, option
   // macOS builds libmongocrypt from source so that it uses the crypto hooks we provide from
   // Node.js' copy of OpenSSL. The published libmongocrypt artifacts are built against native
   // crypto, which is why we compile our own here.
-  //
-  // The addon itself is a universal binary (see the OTHER_CFLAGS/OTHER_LDFLAGS in binding.gyp),
-  // so libmongocrypt has to cover both architectures too. cmake targets only the host
-  // architecture unless CMAKE_OSX_ARCHITECTURES says otherwise.
   const DARWIN_CMAKE_FLAGS =
     process.platform === 'darwin' // The minimum darwin target version we want for
-      ? toCLIFlags({
-        DCMAKE_OSX_DEPLOYMENT_TARGET: '10.12',
-        DCMAKE_OSX_ARCHITECTURES: 'x86_64;arm64'
-      })
+      ? toCLIFlags({ DCMAKE_OSX_DEPLOYMENT_TARGET: '10.12' })
       : [];
+
+  // The addon is a universal binary (see the OTHER_CFLAGS/OTHER_LDFLAGS in binding.gyp), so
+  // libmongocrypt has to cover both architectures too. cmake builds for the host architecture
+  // alone unless CMAKE_OSX_ARCHITECTURES says otherwise.
+  //
+  // This goes through the environment, which is where cmake reads the default for the cache
+  // variable, and is how libmongocrypt's own release build asks for a universal build. Passing it
+  // as -DCMAKE_OSX_ARCHITECTURES instead breaks the try_compile checks in the embedded
+  // mongo-c-driver, whose command line the semicolon in the value splits apart.
+  const cmakeEnv =
+    process.platform === 'darwin'
+      ? { ...process.env, CMAKE_OSX_ARCHITECTURES: 'x86_64;arm64' }
+      : process.env;
 
   const cmakeProgram = process.platform === 'win32' ? 'cmake.exe' : 'cmake';
 
   await run(
     cmakeProgram,
     [...CMAKE_FLAGS, ...WINDOWS_CMAKE_FLAGS, ...DARWIN_CMAKE_FLAGS, libmongocryptRoot],
-    { cwd: nodeBuildRoot, shell: process.platform === 'win32' }
+    { cwd: nodeBuildRoot, shell: process.platform === 'win32', env: cmakeEnv }
   );
 
   await run(cmakeProgram, ['--build', '.', '--target', 'install', '--config', 'RelWithDebInfo'], {
     cwd: nodeBuildRoot,
-    shell: process.platform === 'win32'
+    shell: process.platform === 'win32',
+    env: cmakeEnv
   });
 
   if (process.platform === 'darwin') {
