@@ -32,6 +32,38 @@ jobs:
           retention-days: 1
           compression-level: 0
 
+  # The macOS prebuild is universal and is built on an arm64 runner, so loading it in an x64
+  # process is the only way to exercise its x86_64 half.
+  test_macos_x64_prebuild:
+    needs: host_builds
+    runs-on: macos-15-intel
+    strategy:
+      matrix:
+        node: [20.19.0, 22.x, 24.x]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: Download the macOS prebuild
+        uses: actions/download-artifact@v7
+        with:
+          name: build-macos-latest
+          path: prebuilds/
+
+      # Install without scripts so the prebuild we just downloaded is the one under test
+      - name: Install dependencies
+        run: npm install --ignore-scripts
+
+      - name: Unpack the prebuild
+        run: tar -xzf prebuilds/*darwin-arm64.tar.gz
+
+      - name: Test the prebuild on x64
+        run: npm run test
+
   container_builds_glibc:
     outputs:
       artifact_id: ${{ steps.upload.outputs.artifact-id }}
