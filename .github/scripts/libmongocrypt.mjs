@@ -154,6 +154,18 @@ export async function buildLibMongoCrypt(libmongocryptRoot, nodeDepsRoot, option
 
 const DARWIN_ARCHITECTURES = ['x86_64', 'arm64'];
 
+/** Throws unless the Mach-O file at `filePath` covers both architectures. */
+function assertUniversal(filePath, description) {
+  const archs = execSync(`lipo -archs "${filePath}"`, { encoding: 'utf8' }).trim().split(/\s+/);
+  const missing = DARWIN_ARCHITECTURES.filter(arch => !archs.includes(arch));
+
+  if (missing.length > 0) {
+    throw new Error(
+      `${description} is missing ${missing.join(', ')}, it must cover ${DARWIN_ARCHITECTURES.join(' and ')}. Got: ${archs.join(' ')}`
+    );
+  }
+}
+
 /**
  * Linking the addon against an archive that lacks one of the architectures is not an error: ld
  * skips the archive with a warning, and the symbols it should have provided go missing from that
@@ -168,15 +180,7 @@ async function checkUniversalArchives(nodeDepsRoot) {
   }
 
   for (const archive of archives) {
-    const archivePath = path.join(libDir, archive);
-    const archs = execSync(`lipo -archs "${archivePath}"`, { encoding: 'utf8' }).trim().split(/\s+/);
-    const missing = DARWIN_ARCHITECTURES.filter(arch => !archs.includes(arch));
-
-    if (missing.length > 0) {
-      throw new Error(
-        `${archive} is missing ${missing.join(', ')}. libmongocrypt must cover ${DARWIN_ARCHITECTURES.join(' and ')}, got: ${archs.join(' ')}`
-      );
-    }
+    assertUniversal(path.join(libDir, archive), archive);
   }
 
   console.error(`libmongocrypt archives cover ${DARWIN_ARCHITECTURES.join(' and ')}`);
@@ -302,14 +306,9 @@ async function buildBindings(args, pkg) {
   if (process.platform === 'darwin' && process.arch === 'arm64' && !args.dynamic) {
     const addonPath = resolveRoot('build', 'Release', 'mongocrypt.node');
 
-    const archs = execSync(`lipo -archs "${addonPath}"`, { encoding: 'utf8' }).trim().split(/\s+/);
-    const missing = DARWIN_ARCHITECTURES.filter(arch => !archs.includes(arch));
-    if (missing.length > 0) {
-      throw new Error(
-        `the addon is missing ${missing.join(', ')}, so it cannot be published as darwin-x64. Got: ${archs.join(' ')}`
-      );
-    }
-
+    // The copy below publishes this same file as the darwin-x64 prebuild, so it has to carry both
+    // architectures and have everything resolved in each of them.
+    assertUniversal(addonPath, 'the addon');
     checkAddonSymbols(addonPath);
 
     // @ts-ignore
@@ -329,7 +328,7 @@ async function buildBindings(args, pkg) {
 
 async function main() {
   const { pkg, ...args } = await parseArguments();
-  console.log(args);
+  console.error(args);
 
   const nodeDepsDir = resolveRoot('deps');
 
