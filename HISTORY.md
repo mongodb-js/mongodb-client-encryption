@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [7.2.1](https://github.com/mongodb-js/mongodb-client-encryption/compare/v7.2.0...v7.2.1) (2026-07-29)
+
+
+### Bug Fixes
+
+* **NODE-7704:** build libmongocrypt for both macOS architectures ([#137](https://github.com/mongodb-js/mongodb-client-encryption/issues/137)) ([9335322](https://github.com/mongodb-js/mongodb-client-encryption/commit/9335322c998ad2fa5c215988684e470cc149476a))
+
+## [7.2.0](https://github.com/mongodb-js/mongodb-client-encryption/compare/v7.1.0...v7.2.0) (2026-07-06)
+
+
+### Features
+
+* **NODE-7653:** bump libmongocrypt to 1.20.0 ([#135](https://github.com/mongodb-js/mongodb-client-encryption/issues/135)) ([e9d1a1c](https://github.com/mongodb-js/mongodb-client-encryption/commit/e9d1a1ceb4c0ac05af44b6249d101b08d6e5cb9a))
+
+## [7.1.0](https://github.com/mongodb-js/mongodb-client-encryption/compare/v7.0.0...v7.1.0) (2026-06-24)
+
+
+### Features
+
+* **NODE-7569:** upgrade to libmongocrypt 1.19.2 from GitHub Releases ([#133](https://github.com/mongodb-js/mongodb-client-encryption/issues/133)) ([952c6cb](https://github.com/mongodb-js/mongodb-client-encryption/commit/952c6cbe335f2749d2185e21974ef8a1e3f4a65e))
+
 ## [7.0.0](https://github.com/mongodb-js/mongodb-client-encryption/compare/v7.0.0-alpha.1...v7.0.0) (2025-11-05)
 
 

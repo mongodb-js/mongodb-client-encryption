@@ -16,21 +16,53 @@ jobs:
         os: [macos-latest, windows-2022]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Build ${{ matrix.os }} Prebuild
-        run: node .github/scripts/libmongocrypt.mjs ${{ runner.os == 'Windows' && '--build' || '' }}
+        run: node .github/scripts/libmongocrypt.mjs --build
         shell: bash
 
       - id: upload
         name: Upload prebuild
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: build-${{ matrix.os }}
           path: prebuilds/
           if-no-files-found: 'error'
           retention-days: 1
           compression-level: 0
+
+  # The macOS prebuild is universal and is built on an arm64 runner, so loading it in an x64
+  # process is the only way to exercise its x86_64 half.
+  test_macos_x64_prebuild:
+    needs: host_builds
+    runs-on: macos-26-intel
+    strategy:
+      matrix:
+        node: [20.19.0, 22.x, 24.x]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: Download the macOS prebuild
+        uses: actions/download-artifact@v7
+        with:
+          name: build-macos-latest
+          path: prebuilds/
+
+      # Install without scripts so the prebuild we just downloaded is the one under test
+      - name: Install dependencies
+        run: npm install --ignore-scripts
+
+      - name: Unpack the prebuild
+        run: tar -xzf prebuilds/*darwin-arm64.tar.gz
+
+      - name: Test the prebuild on x64
+        run: npm run test
 
   container_builds_glibc:
     outputs:
@@ -40,7 +72,7 @@ jobs:
       matrix:
         linux_arch: [s390x, arm64, amd64]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -60,7 +92,7 @@ jobs:
 
       - id: upload
         name: Upload prebuild
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: build-linux-glibc-${{ matrix.linux_arch }}
           path: prebuilds/
@@ -75,7 +107,7 @@ jobs:
         linux_arch: [amd64, arm64]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -94,7 +126,7 @@ jobs:
             .
       - id: upload
         name: Upload prebuild
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: build-linux-musl-${{ matrix.linux_arch }}
           path: prebuilds/

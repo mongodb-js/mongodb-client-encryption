@@ -3,11 +3,12 @@
 import util from 'node:util';
 import process from 'node:process';
 import fs, { readFile } from 'node:fs/promises';
-import child_process from 'node:child_process';
-import events from 'node:events';
+import { createWriteStream } from 'node:fs';
 import path from 'node:path';
-import https from 'node:https';
-import stream from 'node:stream/promises';
+import { Readable } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
+import { execSync, spawn } from 'node:child_process';
+import { once } from 'node:events';
 import {
   buildLibmongocryptDownloadUrl,
   getLibmongocryptPrebuildName,
@@ -111,66 +112,172 @@ export async function buildLibMongoCrypt(libmongocryptRoot, nodeDepsRoot, option
       })
       : [];
 
+  // macOS builds libmongocrypt from source so that it uses the crypto hooks we provide from
+  // Node.js' copy of OpenSSL. The published libmongocrypt artifacts are built against native
+  // crypto, which is why we compile our own here.
   const DARWIN_CMAKE_FLAGS =
     process.platform === 'darwin' // The minimum darwin target version we want for
       ? toCLIFlags({ DCMAKE_OSX_DEPLOYMENT_TARGET: '10.12' })
       : [];
+
+  // The addon is a universal binary (see the OTHER_CFLAGS/OTHER_LDFLAGS in binding.gyp), so
+  // libmongocrypt has to cover both architectures too. cmake builds for the host architecture
+  // alone unless CMAKE_OSX_ARCHITECTURES says otherwise.
+  //
+  // This goes through the environment, which is where cmake reads the default for the cache
+  // variable, and is how libmongocrypt's own release build asks for a universal build. Passing it
+  // as -DCMAKE_OSX_ARCHITECTURES instead breaks the try_compile checks in the embedded
+  // mongo-c-driver, whose command line the semicolon in the value splits apart.
+  const cmakeEnv =
+    process.platform === 'darwin'
+      ? { ...process.env, CMAKE_OSX_ARCHITECTURES: 'x86_64;arm64' }
+      : process.env;
 
   const cmakeProgram = process.platform === 'win32' ? 'cmake.exe' : 'cmake';
 
   await run(
     cmakeProgram,
     [...CMAKE_FLAGS, ...WINDOWS_CMAKE_FLAGS, ...DARWIN_CMAKE_FLAGS, libmongocryptRoot],
-    { cwd: nodeBuildRoot, shell: process.platform === 'win32' }
+    { cwd: nodeBuildRoot, shell: process.platform === 'win32', env: cmakeEnv }
   );
 
   await run(cmakeProgram, ['--build', '.', '--target', 'install', '--config', 'RelWithDebInfo'], {
     cwd: nodeBuildRoot,
-    shell: process.platform === 'win32'
+    shell: process.platform === 'win32',
+    env: cmakeEnv
   });
+
+  if (process.platform === 'darwin') {
+    await checkUniversalArchives(nodeDepsRoot);
+  }
+}
+
+const DARWIN_ARCHITECTURES = ['x86_64', 'arm64'];
+
+/** Throws unless the Mach-O file at `filePath` covers both architectures. */
+function assertUniversal(filePath, description) {
+  const archs = execSync(`lipo -archs "${filePath}"`, { encoding: 'utf8' }).trim().split(/\s+/);
+  const missing = DARWIN_ARCHITECTURES.filter(arch => !archs.includes(arch));
+
+  if (missing.length > 0) {
+    throw new Error(
+      `${description} is missing ${missing.join(', ')}, it must cover ${DARWIN_ARCHITECTURES.join(' and ')}. Got: ${archs.join(' ')}`
+    );
+  }
+}
+
+/**
+ * Linking the addon against an archive that lacks one of the architectures is not an error: ld
+ * skips the archive with a warning, and the symbols it should have provided go missing from that
+ * slice of the addon. Check here so the problem is reported where it starts.
+ */
+async function checkUniversalArchives(nodeDepsRoot) {
+  const libDir = resolveRoot(nodeDepsRoot, 'lib');
+  const archives = (await fs.readdir(libDir)).filter(name => name.endsWith('.a'));
+
+  if (archives.length === 0) {
+    throw new Error(`no static archives found in ${libDir}`);
+  }
+
+  for (const archive of archives) {
+    assertUniversal(path.join(libDir, archive), archive);
+  }
+
+  console.error(`libmongocrypt archives cover ${DARWIN_ARCHITECTURES.join(' and ')}`);
+}
+
+/**
+ * A bundle is allowed to have undefined symbols, which are looked up in the flat namespace when
+ * the addon is loaded. libmongocrypt is linked statically, so anything left undefined here means
+ * the link silently dropped it and loading the addon will fail with ERR_DLOPEN_FAILED.
+ */
+function checkAddonSymbols(addonPath) {
+  for (const arch of DARWIN_ARCHITECTURES) {
+    const output = execSync(`nm -arch ${arch} -u "${addonPath}"`, { encoding: 'utf8' });
+    const undefinedSymbols = output
+      .split('\n')
+      .map(line => line.trim())
+      .filter(line => line.includes('mongocrypt'));
+
+    if (undefinedSymbols.length > 0) {
+      throw new Error(
+        `${undefinedSymbols.length} undefined libmongocrypt symbols in the ${arch} slice of ${addonPath}, starting with ${undefinedSymbols[0]}`
+      );
+    }
+  }
+
+  console.error(`addon has no undefined libmongocrypt symbols in either architecture`);
+}
+
+async function verifySignature(tarballPath, ref, prebuild) {
+  const ascURL = `https://github.com/mongodb/libmongocrypt/releases/download/${ref}/libmongocrypt-${prebuild}-${ref}.asc`;
+  const pubKeyURL = 'https://pgp.mongodb.com/libmongocrypt.pub';
+  const ascPath = `${tarballPath}.asc`;
+  const pubKeyPath = path.join(path.dirname(tarballPath), 'libmongocrypt.pub');
+
+  console.error('verifying libmongocrypt signature...');
+
+  try {
+    const [ascResponse, pubKeyResponse] = await Promise.all([fetch(ascURL), fetch(pubKeyURL)]);
+    if (!ascResponse.ok) throw new Error(`HTTP ${ascResponse.status} downloading ${ascURL}`);
+    if (!pubKeyResponse.ok) throw new Error(`HTTP ${pubKeyResponse.status} downloading ${pubKeyURL}`);
+
+    await Promise.all([
+      fs.writeFile(ascPath, Buffer.from(await ascResponse.arrayBuffer())),
+      fs.writeFile(pubKeyPath, Buffer.from(await pubKeyResponse.arrayBuffer()))
+    ]);
+
+    await run('gpg', ['--import', pubKeyPath]);
+    await run('gpg', ['--verify', ascPath, tarballPath]);
+  } finally {
+    await Promise.all([fs.rm(ascPath, { force: true }), fs.rm(pubKeyPath, { force: true })]);
+  }
+
+  console.error('libmongocrypt signature verified');
 }
 
 export async function downloadLibMongoCrypt(nodeDepsRoot, { ref }) {
   const prebuild = getLibmongocryptPrebuildName();
-
   const downloadURL = buildLibmongocryptDownloadUrl(ref, prebuild);
 
   console.error('downloading libmongocrypt...', downloadURL);
-  const destination = resolveRoot(`_libmongocrypt-${ref}`);
 
+  const destination = resolveRoot(`_libmongocrypt-${ref}`);
   await fs.rm(destination, { recursive: true, force: true });
   await fs.mkdir(destination);
 
-  const downloadDestination = `nocrypto`;
-  const unzipArgs = ['-xzv', '-C', `_libmongocrypt-${ref}`, downloadDestination];
-  console.error(`+ tar ${unzipArgs.join(' ')}`);
-  const unzip = child_process.spawn('tar', unzipArgs, {
-    stdio: ['pipe', 'inherit', 'pipe'],
-    cwd: resolveRoot('.')
-  });
-  if (unzip.stdin == null) throw new Error('Tar process must have piped stdin');
+  const tarballPath = resolveRoot(`_libmongocrypt-${ref}.tar.gz`);
 
-  const [response] = await events.once(https.get(downloadURL), 'response');
+  const response = await fetch(downloadURL);
+  if (!response.ok) throw new Error(`HTTP ${response.status} downloading ${downloadURL}`);
 
   const start = performance.now();
 
-  try {
-    await stream.pipeline(response, unzip.stdin);
-  } catch {
-    await fs.access(path.join(`_libmongocrypt-${ref}`, downloadDestination));
+  await pipeline(Readable.fromWeb(response.body), createWriteStream(tarballPath));
+
+  // Verify GPG signature for GitHub releases (release refs contain '.')
+  if (ref.includes('.')) {
+    await verifySignature(tarballPath, ref, prebuild);
   }
 
-  const end = performance.now();
+  const unzip = spawn('tar', ['-xzv', '-C', destination, '-f', tarballPath], { stdio: ['ignore', 'inherit', 'inherit'] });
+  await once(unzip, 'exit');
 
+  if (unzip.exitCode !== 0) throw new Error(`tar exited with code ${unzip.exitCode}`);
+
+  await fs.rm(tarballPath, { force: true });
+
+  const end = performance.now();
   console.error(`downloaded libmongocrypt in ${(end - start) / 1000} secs...`);
 
   await fs.rm(nodeDepsRoot, { recursive: true, force: true });
-  await fs.cp(resolveRoot(destination, 'nocrypto'), nodeDepsRoot, { recursive: true });
+  await fs.cp(destination, nodeDepsRoot, { recursive: true });
+
   const potentialLib64Path = path.join(nodeDepsRoot, 'lib64');
   try {
     await fs.rename(potentialLib64Path, path.join(nodeDepsRoot, 'lib'));
-  } catch (error) {
-    await fs.access(path.join(nodeDepsRoot, 'lib')); // Ensure there is a "lib" directory
+  } catch {
+    await fs.access(path.join(nodeDepsRoot, 'lib'));
   }
 }
 
@@ -196,7 +303,14 @@ async function buildBindings(args, pkg) {
   // Compile Typescript
   await run('npm', ['run', 'prepare']);
 
-  if (process.platform === 'darwin' && process.arch === 'arm64') {
+  if (process.platform === 'darwin' && process.arch === 'arm64' && !args.dynamic) {
+    const addonPath = resolveRoot('build', 'Release', 'mongocrypt.node');
+
+    // The copy below publishes this same file as the darwin-x64 prebuild, so it has to carry both
+    // architectures and have everything resolved in each of them.
+    assertUniversal(addonPath, 'the addon');
+    checkAddonSymbols(addonPath);
+
     // @ts-ignore
     const {
       binary: {
@@ -205,7 +319,7 @@ async function buildBindings(args, pkg) {
         ]
       }
     } = JSON.parse(await readFile(resolveRoot('package.json'), 'utf-8'));
-    // The "arm64" build is actually a universal binary
+    // The "arm64" build is a universal binary, so it serves as the x64 prebuild as well
     const armTar = `mongodb-client-encryption-v${pkg.version}-napi-v${napiVersion}-darwin-arm64.tar.gz`;
     const x64Tar = `mongodb-client-encryption-v${pkg.version}-napi-v${napiVersion}-darwin-x64.tar.gz`;
     await fs.copyFile(resolveRoot('prebuilds', armTar), resolveRoot('prebuilds', x64Tar));
@@ -214,7 +328,7 @@ async function buildBindings(args, pkg) {
 
 async function main() {
   const { pkg, ...args } = await parseArguments();
-  console.log(args);
+  console.error(args);
 
   const nodeDepsDir = resolveRoot('deps');
 
