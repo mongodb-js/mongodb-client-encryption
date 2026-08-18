@@ -1,6 +1,6 @@
 import { spawnSync } from 'node:child_process';
 
-spawnSync('tsc', { stdio: 'inherit' });
+spawnSync('tsc', { stdio: 'inherit', shell: true });
 
 try {
   spawnSync('git', ['config', 'core.hooksPath', '.githooks'], { stdio: 'inherit' });
