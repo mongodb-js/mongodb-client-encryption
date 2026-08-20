@@ -121,3 +121,18 @@ To lint the Typescript, you can run `npm run check:eslint -- --fix`. To lint the
 The unit tests require the binding to be built. Run `npm run rebuild` to build the addon from the c++ source. Then the tests can be run with `npm test`.
 
 Note: changes to c++ source are not automatically re-compiled. One needs to rebuild the bindings after each change.
+
+## AI Agent Configuration
+
+This repository uses [agentskills.io](https://agentskills.io) conventions for AI coding agent
+instructions. `AGENTS.md` is the canonical source of truth — tool-specific files like `CLAUDE.md`
+are generated references.
+
+### Adding a nested AGENTS.md
+
+1. Create an `AGENTS.md` in the target directory.
+2. `git add` the file.
+3. Run `scripts/symlink-claude-md.sh` to generate the companion `CLAUDE.md`.
+    - Note: `scripts/symlink-claude-md.sh` is vendored from an [internal repo](https://github.com/10gen/mongohouse/blob/master/scripts/symlink-claude-md.sh) and should not be edited directly.
+4. Stage and commit the files.
+
