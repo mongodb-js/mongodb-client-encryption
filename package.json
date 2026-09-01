@@ -49,7 +49,7 @@
     "@types/sinon": "^21.0.0",
     "@types/sinon-chai": "^4.0.0",
     "@typescript-eslint/eslint-plugin": "^8.68.0",
-    "bson": "^6.10.4",
+    "bson": "^7.3.2",
     "chai": "^4.5.0",
     "chai-subset": "^1.6.0",
     "clang-format": "^1.8.0",
