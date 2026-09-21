@@ -179,13 +179,13 @@ describe('MongoCryptConstructor', () => {
 
   describe('.makeEncryptionContext()', () => {
     it('throws if `command` is not a Uint8Array', () => {
-      expect(() => mc.makeEncryptionContext('foo.bar', 'some non-buffer')).to.throw(
+      expect(() => mc.makeEncryptionContext('foo', 'some non-buffer')).to.throw(
         /Parameter `command` must be a Uint8Array./
       );
     });
 
     it('returns a MongoCryptContext', () => {
-      expect(mc.makeEncryptionContext('foo.bar', serialize({ ping: 1 }))).to.be.instanceOf(
+      expect(mc.makeEncryptionContext('foo', serialize({ ping: 1 }))).to.be.instanceOf(
         MongoCryptContext
       );
     });

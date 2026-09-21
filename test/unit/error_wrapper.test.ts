@@ -146,7 +146,7 @@ describe('custom error wrapper functionality', function () {
     });
 
     it('#makeEncryptionContext() wraps errors from the bindings', function () {
-      expect(() => context.makeEncryptionContext('db.collection', Buffer.from([1, 2, 3]))).to.throw(
+      expect(() => context.makeEncryptionContext('db', Buffer.from([1, 2, 3]))).to.throw(
         CustomError
       );
     });
