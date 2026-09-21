@@ -93,7 +93,7 @@ describe('custom error wrapper functionality', function () {
 
     beforeEach(function () {
       class MockMongoCrypt implements IMongoCrypt {
-        makeEncryptionContext(_db: string, _command: Uint8Array): IMongoCryptContext {
+        makeEncryptionContext(_ns: string, _command: Uint8Array): IMongoCryptContext {
           throw new Error('Method not implemented.');
         }
         makeExplicitEncryptionContext(

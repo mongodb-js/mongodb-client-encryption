@@ -104,9 +104,9 @@ export class MongoCrypt implements IMongoCrypt {
     this.cryptoHooksProvider = this.mc.cryptoHooksProvider;
   }
 
-  makeEncryptionContext(db: string, command: Uint8Array): MongoCryptContext {
+  makeEncryptionContext(ns: string, command: Uint8Array): MongoCryptContext {
     try {
-      return new MongoCryptContext(this.mc.makeEncryptionContext(db, command), this.errorWrapper);
+      return new MongoCryptContext(this.mc.makeEncryptionContext(ns, command), this.errorWrapper);
     } catch (error) {
       throw this.errorWrapper(error);
     }

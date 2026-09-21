@@ -623,7 +623,7 @@ Value MongoCrypt::Status(const CallbackInfo& info) {
 }
 
 Value MongoCrypt::MakeEncryptionContext(const CallbackInfo& info) {
-    std::string db = info[0].ToString();
+    std::string ns = info[0].ToString();
     std::unique_ptr<mongocrypt_ctx_t, MongoCryptContextDeleter> context(
         mongocrypt_ctx_new(mongo_crypt()));
 
@@ -631,7 +631,7 @@ Value MongoCrypt::MakeEncryptionContext(const CallbackInfo& info) {
 
     std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binaryCommand(
         Uint8ArrayToBinary(commandBuffer));
-    if (!mongocrypt_ctx_encrypt_init(context.get(), db.c_str(), db.size(), binaryCommand.get())) {
+    if (!mongocrypt_ctx_encrypt_init(context.get(), ns.c_str(), ns.size(), binaryCommand.get())) {
         throw TypeError::New(Env(), errorStringFromStatus(context.get()));
     }
 

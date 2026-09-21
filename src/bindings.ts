@@ -92,7 +92,7 @@ export type MongoCryptConstructorOptions = {
 };
 
 export interface IMongoCrypt {
-  makeEncryptionContext(db: string, command: Uint8Array): IMongoCryptContext;
+  makeEncryptionContext(ns: string, command: Uint8Array): IMongoCryptContext;
   makeExplicitEncryptionContext(
     value: Uint8Array,
     options?: {
