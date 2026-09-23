@@ -24,7 +24,7 @@ information explaining why this change is valuable.
 <!--
 Contributors: please leave the release notes section for the Node driver team to fill in. The following instructions are for maintainers.
 
-Fill in a highlight ONLY for user-visible changes: bug fixes users hit, security fixes, behavior changes. Routine dependency bumps and internal refactors should leave it empty. See v7.2.1 for an example.
+Fill in a highlight ONLY for user-visible changes: bug fixes users hit, security fixes, behavior changes. Routine dependency bumps and internal refactors should leave it empty.
 
 Start the highlight with a `### ` heading.
 
