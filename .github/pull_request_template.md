@@ -3,6 +3,7 @@
 #### Summary of Changes
 
 <!-- Please describe the changes in this PR in a high-level overview. -->
+<!-- NOTE: This library provides encryption functionality for the MongoDB Node.js driver, it is not intended to be consumed in isolation. For changes to this library, please see the `mongodb` package: https://github.com/mongodb/node-mongodb-native -->
 
 ##### Notes for Reviewers
 
@@ -32,6 +33,8 @@ NOTE: nothing in this repo reads this section automatically. Whoever cuts the re
 -->
 
 <!-- RELEASE_HIGHLIGHT_START -->
+
+<!-- ### Release notes highlight ->
 
 <!-- RELEASE_HIGHLIGHT_END -->
 
