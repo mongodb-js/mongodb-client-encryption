@@ -28,7 +28,7 @@ Fill in a highlight ONLY for user-visible changes: bug fixes users hit, security
 
 Start the highlight with a `### ` heading.
 
-NOTE: nothing in this repo reads this section automatically. Whoever cuts the release must copy it into the release PR body by hand before merging. Automating this is tracked in NODE-6612.
+NOTE: nothing in this repo reads this section automatically. Whoever cuts the release must copy it into the release PR body by hand before merging.
 -->
 
 <!-- RELEASE_HIGHLIGHT_START -->
