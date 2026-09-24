@@ -34,7 +34,7 @@ NOTE: nothing in this repo reads this section automatically. Whoever cuts the re
 
 <!-- RELEASE_HIGHLIGHT_START -->
 
-<!-- ### Release notes highlight ->
+<!-- ### Release notes highlight -->
 
 <!-- RELEASE_HIGHLIGHT_END -->
 
