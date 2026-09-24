@@ -1,5 +1,5 @@
 {
-  "pull-request-header": "Please run the release_notes action before releasing to generate release highlights",
+  "pull-request-header": "Copy any RELEASE_HIGHLIGHT sections from the PRs in this release into the body below before merging. Automating this is tracked in NODE-6612.",
   "packages": {
     ".": {
       "include-component-in-tag": false,
