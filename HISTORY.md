@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [7.2.2](https://github.com/mongodb-js/mongodb-client-encryption/compare/v7.2.1...v7.2.2) (2026-09-30)
+
+
+### Bug Fixes
+
+* **NODE-7811:** update libmongocrypt ([#153](https://github.com/mongodb-js/mongodb-client-encryption/issues/153)) ([4046d56](https://github.com/mongodb-js/mongodb-client-encryption/commit/4046d56731aeee19a02645459325e674c3194afb))
+
 ## [7.2.1](https://github.com/mongodb-js/mongodb-client-encryption/compare/v7.2.0...v7.2.1) (2026-07-29)
 
 
