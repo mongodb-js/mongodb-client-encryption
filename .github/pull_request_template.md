@@ -3,6 +3,7 @@
 #### Summary of Changes
 
 <!-- Please describe the changes in this PR in a high-level overview. -->
+<!-- NOTE: This library provides encryption functionality for the MongoDB Node.js driver, it is not intended to be consumed in isolation. For changes to this library, please see the `mongodb` package: https://github.com/mongodb/node-mongodb-native -->
 
 ##### Notes for Reviewers
 
@@ -21,18 +22,19 @@ information explaining why this change is valuable.
 
 ### Release Highlight
 
-<!-- 
+<!--
 Contributors: please leave the release notes section for the Node driver team to fill in. The following instructions are for maintainers.
 
-For user facing changes: please provide release notes. Feel free to browse previous releases for example release highlights.
+Fill in a highlight ONLY for user-visible changes: bug fixes users hit, security fixes, behavior changes. Routine dependency bumps and internal refactors should leave it empty.
 
-If there are no user-facing changes in this PR, please delete the release highlight section from the PR description.
+Start the highlight with a `### ` heading.
+
+NOTE: nothing in this repo reads this section automatically. Whoever cuts the release must copy it into the release PR body by hand before merging.
 -->
 
 <!-- RELEASE_HIGHLIGHT_START -->
 
-<!-- ### Release notes highlight ->
-<!-- LEAVE EMPTY: we do not write release highlights for mongodb-client-encryption -->
+<!-- ### Release notes highlight -->
 
 <!-- RELEASE_HIGHLIGHT_END -->
 
