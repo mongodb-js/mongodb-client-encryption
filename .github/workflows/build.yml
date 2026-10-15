@@ -49,7 +49,7 @@ jobs:
           node-version: ${{ matrix.node }}
 
       - name: Download the macOS prebuild
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: build-macos-latest
           path: prebuilds/
