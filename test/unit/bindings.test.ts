@@ -211,8 +211,15 @@ describe('MongoCryptConstructor', () => {
     });
 
     it('returns a MongoCryptContext', () => {
+      // libmongocrypt >= 1.20.5 rejects empty payloads, so use a minimal non-empty FLE1-style one
+      const blobSubtype = Buffer.from([2]); // FLE1 randomized
+      const keyId = Buffer.alloc(16);
+      const originalBsonType = Buffer.from([2]); // string
+      const body = Buffer.alloc(16);
+      const ciphertext = Buffer.concat([blobSubtype, keyId, originalBsonType, body]);
+
       expect(
-        mc.makeExplicitDecryptionContext(serialize({ v: new Binary(Buffer.from([]), 6) }))
+        mc.makeExplicitDecryptionContext(serialize({ v: new Binary(ciphertext, 6) }))
       ).to.be.instanceOf(MongoCryptContext);
     });
   });
