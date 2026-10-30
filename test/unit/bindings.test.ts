@@ -222,6 +222,12 @@ describe('MongoCryptConstructor', () => {
         mc.makeExplicitDecryptionContext(serialize({ v: new Binary(ciphertext, 6) }))
       ).to.be.instanceOf(MongoCryptContext);
     });
+
+    it('throws if the payload is empty', () => {
+      expect(() =>
+        mc.makeExplicitDecryptionContext(serialize({ v: new Binary(Buffer.from([]), 6) }))
+      ).to.throw(/unsupported FLE blob subtype: expected non-empty payload/);
+    });
   });
 
   describe('.makeRewrapManyDataKeyContext()', () => {
