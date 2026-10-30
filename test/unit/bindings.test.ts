@@ -228,6 +228,18 @@ describe('MongoCryptConstructor', () => {
         mc.makeExplicitDecryptionContext(serialize({ v: new Binary(Buffer.from([]), 6) }))
       ).to.throw(/unsupported FLE blob subtype: expected non-empty payload/);
     });
+
+    // (0, 3, 5, 10, 12, 13, 18) are valid FLE blob subtypes but cannot be decrypted
+    // 255 is not a known subtype
+    for (const blobSubtype of [0, 3, 5, 10, 12, 13, 18, 255]) {
+      it(`throws if the FLE blob subtype is ${blobSubtype}`, () => {
+        const ciphertext = Buffer.concat([Buffer.from([blobSubtype]), Buffer.alloc(33)]);
+
+        expect(() =>
+          mc.makeExplicitDecryptionContext(serialize({ v: new Binary(ciphertext, 6) }))
+        ).to.throw(new RegExp(`unsupported FLE blob subtype: ${blobSubtype}$`));
+      });
+    }
   });
 
   describe('.makeRewrapManyDataKeyContext()', () => {
