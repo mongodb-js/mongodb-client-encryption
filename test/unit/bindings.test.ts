@@ -211,10 +211,35 @@ describe('MongoCryptConstructor', () => {
     });
 
     it('returns a MongoCryptContext', () => {
+      // libmongocrypt >= 1.20.5 rejects empty payloads, so use a minimal non-empty FLE1-style one
+      const blobSubtype = Buffer.from([2]); // FLE1 randomized
+      const keyId = Buffer.alloc(16);
+      const originalBsonType = Buffer.from([2]); // string
+      const body = Buffer.alloc(16);
+      const ciphertext = Buffer.concat([blobSubtype, keyId, originalBsonType, body]);
+
       expect(
-        mc.makeExplicitDecryptionContext(serialize({ v: new Binary(Buffer.from([]), 6) }))
+        mc.makeExplicitDecryptionContext(serialize({ v: new Binary(ciphertext, 6) }))
       ).to.be.instanceOf(MongoCryptContext);
     });
+
+    it('throws if the payload is empty', () => {
+      expect(() =>
+        mc.makeExplicitDecryptionContext(serialize({ v: new Binary(Buffer.from([]), 6) }))
+      ).to.throw(/unsupported FLE blob subtype: expected non-empty payload/);
+    });
+
+    // (0, 3, 5, 10, 12, 13, 18) are valid FLE blob subtypes but cannot be decrypted
+    // 255 is not a known subtype
+    for (const blobSubtype of [0, 3, 5, 10, 12, 13, 18, 255]) {
+      it(`throws if the FLE blob subtype is ${blobSubtype}`, () => {
+        const ciphertext = Buffer.concat([Buffer.from([blobSubtype]), Buffer.alloc(33)]);
+
+        expect(() =>
+          mc.makeExplicitDecryptionContext(serialize({ v: new Binary(ciphertext, 6) }))
+        ).to.throw(new RegExp(`unsupported FLE blob subtype: ${blobSubtype}$`));
+      });
+    }
   });
 
   describe('.makeRewrapManyDataKeyContext()', () => {
